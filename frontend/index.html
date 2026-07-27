@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Resultados — AVALIE.CE 2026.1</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <span class="material-icons-round">school</span>
+                <span class="sidebar-title">SADE</span>
+            </div>
+            <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Recolher menu">
+                <span class="material-icons-round">menu</span>
+            </button>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item active" data-page="visao-geral">
+                <span class="material-icons-round">dashboard</span>
+                <span class="nav-label">Visão Geral</span>
+            </li>
+            <li class="nav-item" data-page="habilidades">
+                <span class="material-icons-round">psychology</span>
+                <span class="nav-label">Habilidades</span>
+            </li>
+            <li class="nav-item" data-page="escolas">
+                <span class="material-icons-round">apartment</span>
+                <span class="nav-label">Escolas</span>
+            </li>
+            <li class="nav-item" data-page="turmas">
+                <span class="material-icons-round">groups</span>
+                <span class="nav-label">Turmas</span>
+            </li>
+            <li class="nav-item" data-page="detalhamento">
+                <span class="material-icons-round">table_chart</span>
+                <span class="nav-label">Detalhamento</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <span class="material-icons-round">person</span>
+            <span class="nav-label">Técnico Responsável<br>Analista de Avaliações</span>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main id="main-content" class="main-content">
+        <!-- HEADER -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1 class="header-title">Painel de Resultados — AVALIE.CE 2026.1</h1>
+                <p class="header-subtitle">Coordenadoria de Formação, Estatística e Avaliação Educacional · Município de Ararendá</p>
+            </div>
+            <div class="header-filters" id="header-filters">
+                <div class="filter-group">
+                    <label for="filter-escola">Escola</label>
+                    <select id="filter-escola"><option>Todas</option></select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-ano">Ano</label>
+                    <select id="filter-ano"><option>Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-componente">Componente</label>
+                    <select id="filter-componente"><option>Todos</option></select>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE: VISÃO GERAL -->
+        <section id="page-visao-geral" class="page active">
+            <div class="kpi-strip" id="kpi-strip"></div>
+            <div class="grid-2col">
+                <div class="card chart-card">
+                    <h3 class="card-title">Desempenho por Habilidade</h3>
+                    <div class="chart-wrapper"><canvas id="chart-hab-geral"></canvas></div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Distribuição por Faixa de Desempenho</h3>
+                    <div class="chart-wrapper"><canvas id="chart-distribuicao"></canvas></div>
+                </div>
+            </div>
+            <div class="grid-2col" style="margin-top:12px;">
+                <div class="card chart-card">
+                    <h3 class="card-title">Ranking — Menor Desempenho</h3>
+                    <div class="chart-wrapper"><canvas id="chart-ranking-baixo"></canvas></div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Ranking — Maior Desempenho</h3>
+                    <div class="chart-wrapper"><canvas id="chart-ranking-alto"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: HABILIDADES -->
+        <section id="page-habilidades" class="page">
+            <div class="section-header">
+                <h2>Habilidades Avaliadas</h2>
+                <p>Clique em um card para ver detalhes da habilidade.</p>
+            </div>
+            <div class="hab-grid" id="hab-grid"></div>
+            <div class="hab-legenda">
+                <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fca5a5,#f87171);"></span> Crítico (≤ 40%)</span>
+                <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fdba74,#fb923c);"></span> Atenção (41% – 60%)</span>
+                <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fde68a,#fcd34d);"></span> Intermediário (61% – 80%)</span>
+                <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#86efac,#4ade80);"></span> Adequado (&gt; 80%)</span>
+            </div>
+            <!-- Modal -->
+            <div id="hab-modal" class="modal-overlay hidden">
+                <div class="modal-box">
+                    <button class="modal-close" id="modal-close">&times;</button>
+                    <h3 id="modal-title"></h3>
+                    <p id="modal-desc"></p>
+                    <div id="modal-details"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: ESCOLAS -->
+        <section id="page-escolas" class="page">
+            <div class="section-header">
+                <h2>Desempenho por Escola</h2>
+                <p>Análise comparativa por escola, etapa e componente curricular — AVALIE.CE 2026.1</p>
+            </div>
+
+            <!-- KPI strip -->
+            <div class="kpi-strip" id="esc-kpi-strip"></div>
+
+            <!-- Row 1: Ranking + LP×MT -->
+            <div class="grid-2col" style="margin-top:0;">
+                <div class="card chart-card">
+                    <h3 class="card-title">Ranking Geral das Escolas</h3>
+                    <div class="chart-wrapper" style="height:270px;"><canvas id="chart-esc-ranking"></canvas></div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Língua Portuguesa × Matemática por Escola</h3>
+                    <div class="chart-wrapper" style="height:270px;"><canvas id="chart-esc-lp-mt"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Row 2: Etapas + Críticas -->
+            <div class="grid-2col" style="margin-top:12px;">
+                <div class="card chart-card">
+                    <h3 class="card-title">LP × Matemática por Ano Escolar</h3>
+                    <div class="chart-wrapper"><canvas id="chart-esc-etapas"></canvas></div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Habilidades Críticas por Escola</h3>
+                    <div class="chart-wrapper" style="height:240px;"><canvas id="chart-esc-criticas"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Heatmap -->
+            <div class="card" style="margin-top:12px; padding:16px 20px;">
+                <h3 class="card-title" style="margin-bottom:14px;">Matriz de Desempenho — Escola × Etapa</h3>
+                <div id="esc-heatmap" style="overflow-x:auto;"></div>
+            </div>
+
+        </section>
+
+        <!-- PAGE: TURMAS -->
+        <section id="page-turmas" class="page">
+            <div class="section-header"><h2>Desempenho por Turma (Escola × Ano)</h2></div>
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px;text-align:center;gap:16px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6V2H8"/><path d="m8 18-4 4V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z"/><path d="M2 12h2"/><path d="M9 11v2"/><path d="M15 11v2"/><path d="M12 15v2"/></svg>
+                <h3 style="font-size:18px;font-weight:700;color:#1e293b;">Dados em Manutenção</h3>
+                <p style="font-size:14px;color:#64748b;max-width:460px;line-height:1.6;">Os dados de desempenho por turma estão sendo processados e serão disponibilizados em breve. Enquanto isso, utilize as demais abas para acompanhar os indicadores.</p>
+            </div>
+        </section>
+
+        <!-- PAGE: DETALHAMENTO -->
+        <section id="page-detalhamento" class="page">
+            <div class="section-header"><h2>Tabela Detalhada</h2></div>
+            <div class="table-wrapper">
+                <table id="tabela-detalhe">
+                    <thead>
+                        <tr>
+                            <th>Escola</th>
+                            <th>Ano</th>
+                            <th>Componente</th>
+                            <th>Habilidade</th>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Acerto %</th>
+                            <th>Faixa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
