@@ -44,6 +44,11 @@ function classificarStatusTurma(pct) {
     return 'Adequado';
 }
 
+function anoSortKey(valor) {
+    const m = String(valor || '').match(/(\d+)/);
+    return m ? Number(m[1]) : 999;
+}
+
 function groupBy(arr, keyFn) {
     const g = {};
     arr.forEach(item => {
@@ -65,8 +70,9 @@ function filtrarHab(escola, ano, componente) {
 // ===== FUNÇÕES DE PROCESSAMENTO (client-side) =====
 function getFilterOptions() {
     const escolas = [...new Set(habData.map(r => r.escola).filter(Boolean))].sort();
-    const anos = [...new Set(habData.map(r => r.ano_escolar).filter(Boolean))].sort();
-    const componentes = [...new Set(habData.map(r => r.componente).filter(Boolean))].sort();
+    const anos = [...new Set(habData.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
+    const componentesDisponiveis = new Set(habData.map(r => r.componente).filter(Boolean));
+    const componentes = ['Língua Portuguesa', 'Matemática'].filter(c => componentesDisponiveis.has(c));
     return { escolas: ['Todas', ...escolas], anos: ['Todos', ...anos], componentes: ['Todos', ...componentes] };
 }
 
@@ -246,7 +252,7 @@ function getCurrentPage() {
 function loadFilters() {
     const data = getFilterOptions();
     populateSelect('filter-escola', data.escolas, 'EEF FRANCISCO MOURÃO LIMA');
-    populateSelect('filter-ano', data.anos, '2º ANO');
+    populateSelect('filter-ano', data.anos, '2º Ano');
     populateSelect('filter-componente', data.componentes, 'Língua Portuguesa');
 }
 
@@ -656,8 +662,7 @@ function renderEscolasLpMt(escolas, rede) {
 function renderEscolasEtapas(detalhe, rede) {
     const el = document.getElementById('chart-esc-etapas');
     if (!el) return;
-    const etapaOrder = ['2º Ano', '4º Ano', '5º Ano', '8º Ano', '9º Ano'];
-    const present = etapaOrder.filter(e => detalhe.some(r => r.ano_escolar === e));
+    const present = [...new Set(detalhe.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const n = present.length;
 
     const etapaLp = present.map(e => {
@@ -764,8 +769,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
     const container = document.getElementById('esc-heatmap');
     if (!container) return;
 
-    const etapaOrder = ['2º Ano', '4º Ano', '5º Ano', '8º Ano', '9º Ano'];
-    const present = etapaOrder.filter(e => detalhe.some(r => r.ano_escolar === e));
+    const present = [...new Set(detalhe.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const sortedEsc = [...escolas].sort((a, b) => b.media - a.media);
 
     const clsBg  = { 'Adequado': '#dcfce7', 'Regular': '#fef9c3', 'Atenção': '#ffedd5', 'Crítico': '#fee2e2' };

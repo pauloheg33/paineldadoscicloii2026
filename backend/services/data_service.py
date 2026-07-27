@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
 
 
 def load_habilidades():
@@ -16,6 +17,7 @@ def load_habilidades():
     df["ano_escolar"] = df["ano_escolar"].astype(str).str.extract(r"(\d+º\s*(?:Ano|ANO))", expand=False)
     df["componente"] = df["componente"].str.strip()
     df["componente"] = df["componente"].map({"LP": "Língua Portuguesa", "MT": "Matemática"}).fillna(df["componente"])
+    df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
     df = df.dropna(subset=["ano_escolar", "escola", "habilidade_codigo"])
     df["acerto_pct"] = pd.to_numeric(df["acerto_pct"], errors="coerce")
     df["habilidade_pos"] = df["habilidade_codigo"].str.extract(r"(H\s?\d+)", expand=False).str.replace(" ", "")
@@ -34,6 +36,11 @@ def load_desempenho():
     df["ano_escolar"] = df["ano_escolar"].astype(str).str.strip()
     df["escola"] = df["escola"].astype(str).str.strip()
     return df
+
+
+def ano_sort_key(valor):
+    match = pd.Series([str(valor)]).str.extract(r"(\d+)")[0].iloc[0]
+    return int(match) if pd.notna(match) else 999
 
 
 def classificar_faixa(pct):
@@ -81,8 +88,8 @@ def filtrar_habilidades(escola=None, ano=None, componente=None):
 def get_filtros():
     df = get_habilidades()
     escolas = sorted([x for x in df["escola"].unique() if pd.notna(x)])
-    anos = sorted([x for x in df["ano_escolar"].unique() if pd.notna(x)])
-    componentes = sorted([x for x in df["componente"].unique() if pd.notna(x)])
+    anos = sorted([x for x in df["ano_escolar"].unique() if pd.notna(x)], key=ano_sort_key)
+    componentes = [x for x in ["Língua Portuguesa", "Matemática"] if x in set(df["componente"].dropna())]
     return {
         "escolas": ["Todas"] + escolas,
         "anos": ["Todos"] + anos,

@@ -11,6 +11,7 @@ ROOT = Path(__file__).parent
 DATA_DIR = ROOT / "backend" / "data"
 FRONTEND_DIR = ROOT / "frontend"
 DIST_DIR = ROOT / "dist"
+VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
 
 
 def classificar_faixa(pct):
@@ -24,6 +25,11 @@ def classificar_faixa(pct):
         return "Intermediário"
     else:
         return "Adequado"
+
+
+def extrair_ano_ordenavel(valor):
+    match = pd.Series([str(valor)]).str.extract(r"(\d+)")[0].iloc[0]
+    return int(match) if pd.notna(match) else 999
 
 
 def classificar_status(pct):
@@ -58,6 +64,7 @@ def build():
     df["componente"] = df["componente"].map(
         {"LP": "Língua Portuguesa", "MT": "Matemática"}
     ).fillna(df["componente"])
+    df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
     df = df.dropna(subset=["ano_escolar", "escola", "habilidade_codigo"])
     df["acerto_pct"] = pd.to_numeric(df["acerto_pct"], errors="coerce")
     df["habilidade_pos"] = (
@@ -89,6 +96,8 @@ def build():
     df2["media_geral"] = pd.to_numeric(df2["media_geral"], errors="coerce")
     df2["ano_escolar"] = df2["ano_escolar"].astype(str).str.strip()
     df2["escola"] = df2["escola"].astype(str).str.strip()
+    df2["ano_sort"] = df2["ano_escolar"].apply(extrair_ano_ordenavel)
+    df2 = df2.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
 
     des_str = df2.to_json(orient="records", force_ascii=False)
     (DIST_DIR / "data" / "desempenho.json").write_text(des_str, encoding="utf-8")
@@ -112,6 +121,8 @@ def build():
     df3["classificacao"] = df3["classificacao"].astype(str).str.strip()
     df3["ano_escolar"] = df3["ano_escolar"].astype(str).str.strip()
     df3 = df3.dropna(subset=["escola", "media_geral"])
+    df3["ano_sort"] = df3["ano_escolar"].apply(extrair_ano_ordenavel)
+    df3 = df3.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
 
     rede_analise = {}
     if rede_row is not None:
@@ -196,6 +207,7 @@ def build():
         df4["componente"] = df4["componente"].map(
             {"LP": "Língua Portuguesa", "MT": "Matemática"}
         ).fillna(df4["componente"])
+        df4 = df4[df4["componente"].isin(VALID_COMPONENTES)].copy()
         df4["media_pct"] = pd.to_numeric(df4["media_pct"], errors="coerce")
         df4["alunos_avaliados"] = pd.to_numeric(df4["alunos_avaliados"], errors="coerce").fillna(0).astype(int)
         df4["hab_criticas"] = pd.to_numeric(df4["hab_criticas"], errors="coerce").fillna(0).astype(int)
@@ -211,6 +223,8 @@ def build():
         )
         df4["faixa"] = df4["media_pct"].apply(classificar_faixa)
         df4 = df4.dropna(subset=["escola", "turma", "ano_escolar", "componente", "media_pct"])
+        df4["ano_sort"] = df4["ano_escolar"].apply(extrair_ano_ordenavel)
+        df4 = df4.sort_values(["escola", "ano_sort", "turma", "componente"]).drop(columns=["ano_sort"])
 
         turmas_cols = [
             "escola", "turma", "ano_escolar", "componente",
