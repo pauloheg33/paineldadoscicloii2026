@@ -168,11 +168,37 @@
 
         <!-- PAGE: TURMAS -->
         <section id="page-turmas" class="page">
-            <div class="section-header"><h2>Desempenho por Turma (Escola × Ano)</h2></div>
-            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px;text-align:center;gap:16px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6V2H8"/><path d="m8 18-4 4V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z"/><path d="M2 12h2"/><path d="M9 11v2"/><path d="M15 11v2"/><path d="M12 15v2"/></svg>
-                <h3 style="font-size:18px;font-weight:700;color:#1e293b;">Dados em Manutenção</h3>
-                <p style="font-size:14px;color:#64748b;max-width:460px;line-height:1.6;">Os dados de desempenho por turma estão sendo processados e serão disponibilizados em breve. Enquanto isso, utilize as demais abas para acompanhar os indicadores.</p>
+            <div class="section-header">
+                <h2>Desempenho por Turma</h2>
+                <p>Resultados por turma com filtros por escola, ano e componente curricular.</p>
+            </div>
+            <div class="kpi-strip" id="tur-kpi-strip"></div>
+            <div class="grid-2col">
+                <div class="card chart-card">
+                    <h3 class="card-title">Ranking das Turmas</h3>
+                    <div class="chart-wrapper" style="height:320px;"><canvas id="chart-turmas-ranking"></canvas></div>
+                </div>
+                <div class="card chart-card">
+                    <h3 class="card-title">Distribuição por Classificação</h3>
+                    <div class="chart-wrapper"><canvas id="chart-turmas-classificacao"></canvas></div>
+                </div>
+            </div>
+            <div class="table-wrapper" style="margin-top:12px;">
+                <table id="tabela-turmas">
+                    <thead>
+                        <tr>
+                            <th>Escola</th>
+                            <th>Turma</th>
+                            <th>Ano</th>
+                            <th>Componentes</th>
+                            <th>Média %</th>
+                            <th>Alunos</th>
+                            <th>Hab. Críticas</th>
+                            <th>Classificação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-turmas-body"></tbody>
+                </table>
             </div>
         </section>
 

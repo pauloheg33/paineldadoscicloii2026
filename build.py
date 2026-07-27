@@ -26,6 +26,18 @@ def classificar_faixa(pct):
         return "Adequado"
 
 
+def classificar_status(pct):
+    if pd.isna(pct):
+        return "Sem dados"
+    if pct <= 40:
+        return "Crítico"
+    elif pct <= 60:
+        return "Atenção"
+    elif pct <= 80:
+        return "Regular"
+    return "Adequado"
+
+
 def build():
     # Limpa dist/
     if DIST_DIR.exists():
@@ -152,6 +164,63 @@ def build():
     analise_str = json.dumps(analise_out, ensure_ascii=False)
     (DIST_DIR / "data" / "analise.json").write_text(analise_str, encoding="utf-8")
 
+    # ── Turmas ──
+    path_turmas = DATA_DIR / "desempenho_por_turma.xlsx"
+    turmas_records = []
+    if path_turmas.exists():
+        try:
+            df4 = pd.read_excel(path_turmas, sheet_name="modelo_turmas")
+        except ValueError:
+            df4 = pd.read_excel(path_turmas)
+        df4.columns = [str(c).strip().lower() for c in df4.columns]
+        expected_cols = [
+            "escola", "turma", "ano_escolar", "componente",
+            "media_pct", "alunos_avaliados", "hab_criticas", "classificacao"
+        ]
+        missing = [c for c in expected_cols if c not in df4.columns]
+        if missing:
+            raise ValueError(
+                "A planilha desempenho_por_turma.xlsx está sem as colunas obrigatórias: "
+                + ", ".join(missing)
+            )
+
+        df4["escola"] = df4["escola"].astype(str).str.strip()
+        df4["turma"] = df4["turma"].astype(str).str.strip()
+        df4["ano_escolar"] = (
+            df4["ano_escolar"]
+            .astype(str)
+            .str.extract(r"(\d+º\s*(?:Ano|ANO))", expand=False)
+            .fillna(df4["ano_escolar"].astype(str).str.strip())
+        )
+        df4["componente"] = df4["componente"].astype(str).str.strip()
+        df4["componente"] = df4["componente"].map(
+            {"LP": "Língua Portuguesa", "MT": "Matemática"}
+        ).fillna(df4["componente"])
+        df4["media_pct"] = pd.to_numeric(df4["media_pct"], errors="coerce")
+        df4["alunos_avaliados"] = pd.to_numeric(df4["alunos_avaliados"], errors="coerce").fillna(0).astype(int)
+        df4["hab_criticas"] = pd.to_numeric(df4["hab_criticas"], errors="coerce").fillna(0).astype(int)
+        df4["classificacao"] = (
+            df4["classificacao"]
+            .astype(str)
+            .str.strip()
+            .replace({"": None, "nan": None, "None": None})
+        )
+        df4["classificacao"] = df4["classificacao"].where(
+            df4["classificacao"].notna(),
+            df4["media_pct"].apply(classificar_status)
+        )
+        df4["faixa"] = df4["media_pct"].apply(classificar_faixa)
+        df4 = df4.dropna(subset=["escola", "turma", "ano_escolar", "componente", "media_pct"])
+
+        turmas_cols = [
+            "escola", "turma", "ano_escolar", "componente",
+            "media_pct", "alunos_avaliados", "hab_criticas", "classificacao", "faixa"
+        ]
+        turmas_records = df4[turmas_cols].to_dict(orient="records")
+
+    turmas_str = json.dumps(turmas_records, ensure_ascii=False)
+    (DIST_DIR / "data" / "turmas.json").write_text(turmas_str, encoding="utf-8")
+
     # ── Copia frontend ──
     for fname in ["index.html", "style.css", "script.js"]:
         shutil.copy2(FRONTEND_DIR / fname, DIST_DIR / fname)
@@ -161,7 +230,11 @@ def build():
     hab_count = len(json.loads(hab_str))
     des_count = len(json.loads(des_str))
     analise_count = len(escola_records)
-    print(f"Build OK - {hab_count} habilidades, {des_count} desempenho, {analise_count} escolas (analise) -> dist/")
+    turmas_count = len(turmas_records)
+    print(
+        f"Build OK - {hab_count} habilidades, {des_count} desempenho, "
+        f"{analise_count} escolas (analise), {turmas_count} registros de turmas -> dist/"
+    )
 
 
 if __name__ == "__main__":

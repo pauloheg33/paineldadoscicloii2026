@@ -3,6 +3,7 @@ const FAIXA_COLORS = {
     'Crítico': { bg: '#fee2e2', border: '#ef4444', text: '#991b1b' },
     'Atenção': { bg: '#ffedd5', border: '#f97316', text: '#9a3412' },
     'Intermediário': { bg: '#fef9c3', border: '#facc15', text: '#854d0e' },
+    'Regular': { bg: '#fef9c3', border: '#facc15', text: '#854d0e' },
     'Adequado': { bg: '#dcfce7', border: '#22c55e', text: '#166534' }
 };
 
@@ -10,6 +11,7 @@ let charts = {};
 let habData = [];
 let desData = [];
 let analiseData = null;
+let turmasData = [];
 
 Chart.register(ChartDataLabels);
 Chart.defaults.plugins.datalabels = { display: false };
@@ -31,6 +33,14 @@ function classificarFaixa(pct) {
     if (pct <= 40) return 'Crítico';
     if (pct <= 60) return 'Atenção';
     if (pct <= 80) return 'Intermediário';
+    return 'Adequado';
+}
+
+function classificarStatusTurma(pct) {
+    if (pct == null || isNaN(pct)) return 'Sem dados';
+    if (pct <= 40) return 'Crítico';
+    if (pct <= 60) return 'Atenção';
+    if (pct <= 80) return 'Regular';
     return 'Adequado';
 }
 
@@ -194,14 +204,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadData() {
-    const [hab, des, analise] = await Promise.all([
+    const [hab, des, analise, turmas] = await Promise.all([
         fetch('data/habilidades.json').then(r => r.json()).catch(() => []),
         fetch('data/desempenho.json').then(r => r.json()).catch(() => []),
-        fetch('data/analise.json').then(r => r.json()).catch(() => null)
+        fetch('data/analise.json').then(r => r.json()).catch(() => null),
+        fetch('data/turmas.json').then(r => r.json()).catch(() => [])
     ]);
     habData = hab;
     desData = des;
     analiseData = analise;
+    turmasData = turmas;
 }
 
 // ===== SIDEBAR =====
@@ -282,10 +294,110 @@ function loadCurrentPage() {
         'visao-geral': loadVisaoGeral,
         'habilidades': loadHabilidades,
         'escolas': loadEscolas,
-        'turmas': () => {},
+        'turmas': loadTurmas,
         'detalhamento': loadDetalhamento
     };
     if (loaders[page]) loaders[page]();
+}
+
+function getTurmasAgrupadas(escola, ano, componente) {
+    let df = turmasData;
+    if (escola && escola !== 'Todas') df = df.filter(r => r.escola === escola);
+    if (ano && ano !== 'Todos') df = df.filter(r => r.ano_escolar === ano);
+    if (componente && componente !== 'Todos') df = df.filter(r => r.componente === componente);
+    if (!df.length) return [];
+
+    const groups = groupBy(df, r => `${r.escola}\x00${r.turma}\x00${r.ano_escolar}`);
+    const rows = [];
+    for (const [key, records] of Object.entries(groups)) {
+        const [escolaNome, turmaNome, anoNome] = key.split('\x00');
+        const media = rd(mean(records.map(r => r.media_pct)), 1);
+        rows.push({
+            escola: escolaNome,
+            turma: turmaNome,
+            ano_escolar: anoNome,
+            componentes: [...new Set(records.map(r => r.componente).filter(Boolean))].sort(),
+            media_pct: media,
+            alunos_avaliados: Math.max(...records.map(r => Number(r.alunos_avaliados) || 0), 0),
+            hab_criticas: records.reduce((acc, r) => acc + (Number(r.hab_criticas) || 0), 0),
+            classificacao: records[0].classificacao || classificarStatusTurma(media),
+            faixa: classificarFaixa(media)
+        });
+    }
+    rows.sort((a, b) => b.media_pct - a.media_pct);
+    return rows;
+}
+
+function loadTurmas() {
+    destroyChart('chart-turmas-ranking');
+    destroyChart('chart-turmas-classificacao');
+
+    const { escola, ano, componente } = getFilters();
+    const rows = getTurmasAgrupadas(escola, ano, componente);
+    const strip = document.getElementById('tur-kpi-strip');
+    const tbody = document.getElementById('tabela-turmas-body');
+
+    if (!rows.length) {
+        strip.innerHTML = '<div class="card"><p style="color:#64748b;">Nenhum dado de turma disponível para os filtros selecionados.</p></div>';
+        tbody.innerHTML = '';
+        return;
+    }
+
+    const melhor = rows[0];
+    const pior = rows[rows.length - 1];
+    const mediaGeral = rd(mean(rows.map(r => r.media_pct)), 1);
+    const totalAlunos = rows.reduce((acc, r) => acc + (r.alunos_avaliados || 0), 0);
+    const totalCriticas = rows.reduce((acc, r) => acc + (r.hab_criticas || 0), 0);
+
+    strip.innerHTML = '';
+    [
+        { label: 'Turmas', value: rows.length, cls: '', sub: 'na seleção' },
+        { label: 'Média Geral', value: mediaGeral + '%', cls: 'purple', sub: 'das turmas' },
+        { label: 'Melhor Turma', value: melhor.media_pct + '%', cls: 'green', sub: truncate(`${melhor.turma} · ${melhor.escola}`, 28) },
+        { label: 'Menor Média', value: pior.media_pct + '%', cls: 'red', sub: truncate(`${pior.turma} · ${pior.escola}`, 28) },
+        { label: 'Alunos', value: totalAlunos, cls: 'amber', sub: 'avaliados' },
+        { label: 'Hab. Críticas', value: totalCriticas, cls: 'red', sub: 'somadas na seleção' }
+    ].forEach(k => {
+        const div = document.createElement('div');
+        div.className = 'kpi-card ' + k.cls;
+        div.innerHTML = `<span class="kpi-label">${sanitize(k.label)}</span><span class="kpi-value">${sanitize(String(k.value))}</span><span class="kpi-sub">${sanitize(k.sub)}</span>`;
+        strip.appendChild(div);
+    });
+
+    const topRows = rows.slice(0, 12);
+    renderHorizontalBar(
+        'chart-turmas-ranking',
+        topRows.map(r => truncate(`${r.turma} · ${r.escola}`, 26)),
+        topRows.map(r => r.media_pct),
+        topRows.map(r => `${r.ano_escolar} · ${r.classificacao}`),
+        false
+    );
+
+    const classCounts = { 'Crítico': 0, 'Atenção': 0, 'Regular': 0, 'Adequado': 0 };
+    rows.forEach(r => {
+        if (classCounts[r.classificacao] !== undefined) classCounts[r.classificacao]++;
+    });
+    renderDoughnutChart(
+        'chart-turmas-classificacao',
+        Object.keys(classCounts),
+        Object.values(classCounts)
+    );
+
+    tbody.innerHTML = '';
+    rows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${sanitize(row.escola)}</td>
+            <td>${sanitize(row.turma)}</td>
+            <td>${sanitize(row.ano_escolar)}</td>
+            <td>${sanitize(row.componentes.join(', '))}</td>
+            <td><strong>${row.media_pct}%</strong></td>
+            <td>${row.alunos_avaliados}</td>
+            <td>${row.hab_criticas}</td>
+            <td><span class="badge ${badgeClass(row.classificacao)}">${sanitize(row.classificacao)}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 // ===== VISÃO GERAL =====
@@ -743,7 +855,7 @@ function loadDetalhamento() {
 }
 
 function badgeClass(faixa) {
-    const map = { 'Crítico': 'badge-critico', 'Atenção': 'badge-atencao', 'Intermediário': 'badge-intermediario', 'Adequado': 'badge-adequado' };
+    const map = { 'Crítico': 'badge-critico', 'Atenção': 'badge-atencao', 'Intermediário': 'badge-intermediario', 'Regular': 'badge-intermediario', 'Adequado': 'badge-adequado' };
     return map[faixa] || '';
 }
 
