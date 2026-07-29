@@ -5,6 +5,7 @@ Lê os arquivos Excel, produz JSON e monta a pasta dist/.
 import pandas as pd
 import json
 import shutil
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -41,6 +42,43 @@ def normalizar_ano_label(valor):
     return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
 
 
+def chave_escola(valor):
+    texto = " ".join(str(valor).strip().upper().split())
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", texto)
+        if not unicodedata.combining(c)
+    )
+
+
+def normalizar_nome_escola(valor, mapa_escolas):
+    texto = str(valor).strip()
+    if not texto or texto.lower() == "nan":
+        return None
+    return mapa_escolas.get(chave_escola(texto), texto)
+
+
+def construir_mapa_escolas():
+    mapa = {}
+    for path, kwargs in [
+        (DATA_DIR / "desempenho_por_ano.xlsx", {"header": None, "skiprows": 2}),
+        (DATA_DIR / "desempenho_por_ano_analise.xlsx", {"sheet_name": 0, "header": 1}),
+        (DATA_DIR / "desempenho_por_turma.xlsx", {"sheet_name": "modelo_turmas"}),
+    ]:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_excel(path, **kwargs)
+        except ValueError:
+            df = pd.read_excel(path)
+        escola_col = "escola" if "escola" in df.columns else df.columns[0]
+        for raw in df[escola_col].tolist():
+            texto = str(raw).strip()
+            if not texto or texto.lower() == "nan":
+                continue
+            mapa[chave_escola(texto)] = texto
+    return mapa
+
+
 def classificar_status(pct):
     if pd.isna(pct):
         return "Sem dados"
@@ -54,6 +92,8 @@ def classificar_status(pct):
 
 
 def build():
+    mapa_escolas = construir_mapa_escolas()
+
     # Limpa dist/
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
@@ -73,6 +113,7 @@ def build():
     df["componente"] = df["componente"].map(
         {"LP": "Língua Portuguesa", "MT": "Matemática"}
     ).fillna(df["componente"])
+    df["escola"] = df["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
     df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
     df = df.dropna(subset=["ano_escolar", "escola", "habilidade_codigo"])
     df["acerto_pct"] = pd.to_numeric(df["acerto_pct"], errors="coerce")
@@ -104,7 +145,7 @@ def build():
     df2["mt_pct"] = pd.to_numeric(df2["mt_pct"], errors="coerce")
     df2["media_geral"] = pd.to_numeric(df2["media_geral"], errors="coerce")
     df2["ano_escolar"] = df2["ano_escolar"].apply(normalizar_ano_label)
-    df2["escola"] = df2["escola"].astype(str).str.strip()
+    df2["escola"] = df2["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
     df2 = df2.dropna(subset=["ano_escolar", "escola"])
     df2["ano_sort"] = df2["ano_escolar"].apply(extrair_ano_ordenavel)
     df2 = df2.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
@@ -119,7 +160,7 @@ def build():
         "escola", "ano_escolar", "lp_pct", "mt_pct", "media_geral",
         "gap_lp_mat", "vs_rede", "media_escola", "classificacao", "hab_criticas"
     ]
-    df3["escola"] = df3["escola"].astype(str).str.strip()
+    df3["escola"] = df3["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
     rede_mask = df3["escola"].str.startswith("Média")
     rede_row = df3[rede_mask].iloc[0] if rede_mask.any() else None
     df3 = df3[~rede_mask].copy()
@@ -205,7 +246,7 @@ def build():
                 + ", ".join(missing)
             )
 
-        df4["escola"] = df4["escola"].astype(str).str.strip()
+        df4["escola"] = df4["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
         df4["turma"] = df4["turma"].astype(str).str.strip()
         df4["ano_escolar"] = df4["ano_escolar"].apply(normalizar_ano_label)
         df4["componente"] = df4["componente"].astype(str).str.strip()

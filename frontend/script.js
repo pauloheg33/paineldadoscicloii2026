@@ -69,7 +69,13 @@ function filtrarHab(escola, ano, componente) {
 
 // ===== FUNÇÕES DE PROCESSAMENTO (client-side) =====
 function getFilterOptions() {
-    const escolas = [...new Set(habData.map(r => r.escola).filter(Boolean))].sort();
+    const escolas = [...new Set([
+        ...habData.map(r => r.escola),
+        ...desData.map(r => r.escola),
+        ...((analiseData && analiseData.escolas) ? analiseData.escolas.map(r => r.escola) : []),
+        ...((analiseData && analiseData.detalhe) ? analiseData.detalhe.map(r => r.escola) : []),
+        ...turmasData.map(r => r.escola)
+    ].filter(v => v && v !== 'Média Geral da Rede'))].sort();
     const anos = [...new Set([
         ...habData.map(r => r.ano_escolar),
         ...desData.map(r => r.ano_escolar),

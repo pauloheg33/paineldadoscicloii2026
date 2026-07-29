@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import unicodedata
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -15,6 +16,46 @@ def normalizar_ano_label(valor):
     return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
 
 
+def chave_escola(valor):
+    texto = " ".join(str(valor).strip().upper().split())
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", texto)
+        if not unicodedata.combining(c)
+    )
+
+
+def construir_mapa_escolas():
+    mapa = {}
+    for path, kwargs in [
+        (DATA_DIR / "desempenho_por_ano.xlsx", {"header": None, "skiprows": 2}),
+        (DATA_DIR / "desempenho_por_ano_analise.xlsx", {"sheet_name": 0, "header": 1}),
+        (DATA_DIR / "desempenho_por_turma.xlsx", {"sheet_name": "modelo_turmas"}),
+    ]:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_excel(path, **kwargs)
+        except ValueError:
+            df = pd.read_excel(path)
+        escola_col = "escola" if "escola" in df.columns else df.columns[0]
+        for raw in df[escola_col].tolist():
+            texto = str(raw).strip()
+            if not texto or texto.lower() == "nan":
+                continue
+            mapa[chave_escola(texto)] = texto
+    return mapa
+
+
+MAPA_ESCOLAS = construir_mapa_escolas()
+
+
+def normalizar_nome_escola(valor):
+    texto = str(valor).strip()
+    if not texto or texto.lower() == "nan":
+        return None
+    return MAPA_ESCOLAS.get(chave_escola(texto), texto)
+
+
 def load_habilidades():
     path = DATA_DIR / "DADOS_ACERTO_POR_HABILIDADE.xlsx"
     df = pd.read_excel(path)
@@ -24,6 +65,7 @@ def load_habilidades():
         "acerto_pct", "nivel_dificuldade"
     ]
     df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
+    df["escola"] = df["escola"].apply(normalizar_nome_escola)
     df["componente"] = df["componente"].str.strip()
     df["componente"] = df["componente"].map({"LP": "Língua Portuguesa", "MT": "Matemática"}).fillna(df["componente"])
     df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
@@ -43,7 +85,7 @@ def load_desempenho():
     df["mt_pct"] = pd.to_numeric(df["mt_pct"], errors="coerce")
     df["media_geral"] = pd.to_numeric(df["media_geral"], errors="coerce")
     df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
-    df["escola"] = df["escola"].astype(str).str.strip()
+    df["escola"] = df["escola"].apply(normalizar_nome_escola)
     df = df.dropna(subset=["ano_escolar", "escola"])
     return df
 
