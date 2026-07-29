@@ -6,6 +6,15 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
 
 
+def normalizar_ano_label(valor):
+    texto = str(valor).strip()
+    match = pd.Series([texto]).str.extract(r"(?i)(\d+)\s*º?\s*ano\b")[0].iloc[0]
+    if pd.notna(match):
+        return f"{int(match)}º Ano"
+    fallback = pd.Series([texto]).str.extract(r"(\d+)")[0].iloc[0]
+    return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
+
+
 def load_habilidades():
     path = DATA_DIR / "DADOS_ACERTO_POR_HABILIDADE.xlsx"
     df = pd.read_excel(path)
@@ -14,7 +23,7 @@ def load_habilidades():
         "escola", "habilidade_codigo", "habilidade_descricao",
         "acerto_pct", "nivel_dificuldade"
     ]
-    df["ano_escolar"] = df["ano_escolar"].astype(str).str.extract(r"(\d+º\s*(?:Ano|ANO))", expand=False)
+    df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
     df["componente"] = df["componente"].str.strip()
     df["componente"] = df["componente"].map({"LP": "Língua Portuguesa", "MT": "Matemática"}).fillna(df["componente"])
     df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
@@ -33,8 +42,9 @@ def load_desempenho():
     df["lp_pct"] = pd.to_numeric(df["lp_pct"], errors="coerce")
     df["mt_pct"] = pd.to_numeric(df["mt_pct"], errors="coerce")
     df["media_geral"] = pd.to_numeric(df["media_geral"], errors="coerce")
-    df["ano_escolar"] = df["ano_escolar"].astype(str).str.strip()
+    df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
     df["escola"] = df["escola"].astype(str).str.strip()
+    df = df.dropna(subset=["ano_escolar", "escola"])
     return df
 
 

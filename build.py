@@ -32,6 +32,15 @@ def extrair_ano_ordenavel(valor):
     return int(match) if pd.notna(match) else 999
 
 
+def normalizar_ano_label(valor):
+    texto = str(valor).strip()
+    match = pd.Series([texto]).str.extract(r"(?i)(\d+)\s*º?\s*ano\b")[0].iloc[0]
+    if pd.notna(match):
+        return f"{int(match)}º Ano"
+    fallback = pd.Series([texto]).str.extract(r"(\d+)")[0].iloc[0]
+    return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
+
+
 def classificar_status(pct):
     if pd.isna(pct):
         return "Sem dados"
@@ -48,8 +57,8 @@ def build():
     # Limpa dist/
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
-    DIST_DIR.mkdir()
-    (DIST_DIR / "data").mkdir()
+    DIST_DIR.mkdir(parents=True, exist_ok=True)
+    (DIST_DIR / "data").mkdir(parents=True, exist_ok=True)
 
     # ── Habilidades ──
     path_hab = DATA_DIR / "DADOS_ACERTO_POR_HABILIDADE.xlsx"
@@ -59,7 +68,7 @@ def build():
         "escola", "habilidade_codigo", "habilidade_descricao",
         "acerto_pct", "nivel_dificuldade"
     ]
-    df["ano_escolar"] = df["ano_escolar"].astype(str).str.extract(r"(\d+º\s*(?:Ano|ANO))", expand=False)
+    df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
     df["componente"] = df["componente"].str.strip()
     df["componente"] = df["componente"].map(
         {"LP": "Língua Portuguesa", "MT": "Matemática"}
@@ -94,8 +103,9 @@ def build():
     df2["lp_pct"] = pd.to_numeric(df2["lp_pct"], errors="coerce")
     df2["mt_pct"] = pd.to_numeric(df2["mt_pct"], errors="coerce")
     df2["media_geral"] = pd.to_numeric(df2["media_geral"], errors="coerce")
-    df2["ano_escolar"] = df2["ano_escolar"].astype(str).str.strip()
+    df2["ano_escolar"] = df2["ano_escolar"].apply(normalizar_ano_label)
     df2["escola"] = df2["escola"].astype(str).str.strip()
+    df2 = df2.dropna(subset=["ano_escolar", "escola"])
     df2["ano_sort"] = df2["ano_escolar"].apply(extrair_ano_ordenavel)
     df2 = df2.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
 
@@ -119,7 +129,7 @@ def build():
         df3[col] = df3[col].round(1)
     df3["hab_criticas"] = df3["hab_criticas"].round(0)
     df3["classificacao"] = df3["classificacao"].astype(str).str.strip()
-    df3["ano_escolar"] = df3["ano_escolar"].astype(str).str.strip()
+    df3["ano_escolar"] = df3["ano_escolar"].apply(normalizar_ano_label)
     df3 = df3.dropna(subset=["escola", "media_geral"])
     df3["ano_sort"] = df3["ano_escolar"].apply(extrair_ano_ordenavel)
     df3 = df3.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
@@ -197,12 +207,7 @@ def build():
 
         df4["escola"] = df4["escola"].astype(str).str.strip()
         df4["turma"] = df4["turma"].astype(str).str.strip()
-        df4["ano_escolar"] = (
-            df4["ano_escolar"]
-            .astype(str)
-            .str.extract(r"(\d+º\s*(?:Ano|ANO))", expand=False)
-            .fillna(df4["ano_escolar"].astype(str).str.strip())
-        )
+        df4["ano_escolar"] = df4["ano_escolar"].apply(normalizar_ano_label)
         df4["componente"] = df4["componente"].astype(str).str.strip()
         df4["componente"] = df4["componente"].map(
             {"LP": "Língua Portuguesa", "MT": "Matemática"}

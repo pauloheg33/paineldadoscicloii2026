@@ -70,7 +70,12 @@ function filtrarHab(escola, ano, componente) {
 // ===== FUNÇÕES DE PROCESSAMENTO (client-side) =====
 function getFilterOptions() {
     const escolas = [...new Set(habData.map(r => r.escola).filter(Boolean))].sort();
-    const anos = [...new Set(habData.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
+    const anos = [...new Set([
+        ...habData.map(r => r.ano_escolar),
+        ...desData.map(r => r.ano_escolar),
+        ...((analiseData && analiseData.detalhe) ? analiseData.detalhe.map(r => r.ano_escolar) : []),
+        ...turmasData.map(r => r.ano_escolar)
+    ].filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const componentesDisponiveis = new Set(habData.map(r => r.componente).filter(Boolean));
     const componentes = ['Língua Portuguesa', 'Matemática'].filter(c => componentesDisponiveis.has(c));
     return { escolas: ['Todas', ...escolas], anos: ['Todos', ...anos], componentes: ['Todos', ...componentes] };
@@ -259,11 +264,12 @@ function loadFilters() {
 function populateSelect(id, options, defaultValue) {
     const sel = document.getElementById(id);
     sel.innerHTML = '';
+    const selectedValue = options.includes(defaultValue) ? defaultValue : (options[0] || '');
     options.forEach(opt => {
         const o = document.createElement('option');
         o.value = opt;
         o.textContent = opt;
-        if (opt === defaultValue) o.selected = true;
+        if (opt === selectedValue) o.selected = true;
         sel.appendChild(o);
     });
 }
