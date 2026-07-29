@@ -42,6 +42,15 @@ def normalizar_ano_label(valor):
     return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
 
 
+def escalar_percentual_serie(serie):
+    numerica = pd.to_numeric(serie, errors="coerce")
+    if numerica.dropna().empty:
+        return numerica
+    if numerica.dropna().abs().max() <= 1.0:
+        return numerica * 100
+    return numerica
+
+
 def chave_escola(valor):
     texto = " ".join(str(valor).strip().upper().split())
     return "".join(
@@ -116,7 +125,7 @@ def build():
     df["escola"] = df["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
     df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
     df = df.dropna(subset=["ano_escolar", "escola", "habilidade_codigo"])
-    df["acerto_pct"] = pd.to_numeric(df["acerto_pct"], errors="coerce")
+    df["acerto_pct"] = escalar_percentual_serie(df["acerto_pct"]).round(1)
     df["habilidade_pos"] = (
         df["habilidade_codigo"]
         .str.extract(r"(H\s?\d+)", expand=False)
@@ -141,9 +150,9 @@ def build():
     path_des = DATA_DIR / "desempenho_por_ano.xlsx"
     df2 = pd.read_excel(path_des, header=None, skiprows=2)
     df2.columns = ["escola", "ano_escolar", "lp_pct", "mt_pct", "media_geral"]
-    df2["lp_pct"] = pd.to_numeric(df2["lp_pct"], errors="coerce")
-    df2["mt_pct"] = pd.to_numeric(df2["mt_pct"], errors="coerce")
-    df2["media_geral"] = pd.to_numeric(df2["media_geral"], errors="coerce")
+    df2["lp_pct"] = escalar_percentual_serie(df2["lp_pct"]).round(1)
+    df2["mt_pct"] = escalar_percentual_serie(df2["mt_pct"]).round(1)
+    df2["media_geral"] = escalar_percentual_serie(df2["media_geral"]).round(1)
     df2["ano_escolar"] = df2["ano_escolar"].apply(normalizar_ano_label)
     df2["escola"] = df2["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
     df2 = df2.dropna(subset=["ano_escolar", "escola"])
@@ -167,7 +176,7 @@ def build():
     for col in ["lp_pct", "mt_pct", "media_geral", "gap_lp_mat", "vs_rede", "media_escola", "hab_criticas"]:
         df3[col] = pd.to_numeric(df3[col], errors="coerce")
     for col in ["lp_pct", "mt_pct", "media_geral", "gap_lp_mat", "vs_rede", "media_escola"]:
-        df3[col] = df3[col].round(1)
+        df3[col] = escalar_percentual_serie(df3[col]).round(1)
     df3["hab_criticas"] = df3["hab_criticas"].round(0)
     df3["classificacao"] = df3["classificacao"].astype(str).str.strip()
     df3["ano_escolar"] = df3["ano_escolar"].apply(normalizar_ano_label)
@@ -178,9 +187,9 @@ def build():
     rede_analise = {}
     if rede_row is not None:
         rede_analise = {
-            "lp": round(float(pd.to_numeric(rede_row["lp_pct"], errors="coerce")), 2),
-            "mt": round(float(pd.to_numeric(rede_row["mt_pct"], errors="coerce")), 2),
-            "media": round(float(pd.to_numeric(rede_row["media_geral"], errors="coerce")), 2),
+            "lp": round(float(escalar_percentual_serie(pd.Series([rede_row["lp_pct"]])).iloc[0]), 1),
+            "mt": round(float(escalar_percentual_serie(pd.Series([rede_row["mt_pct"]])).iloc[0]), 1),
+            "media": round(float(escalar_percentual_serie(pd.Series([rede_row["media_geral"]])).iloc[0]), 1),
         }
 
     escola_agg = df3.groupby("escola").agg(
@@ -254,7 +263,7 @@ def build():
             {"LP": "Língua Portuguesa", "MT": "Matemática"}
         ).fillna(df4["componente"])
         df4 = df4[df4["componente"].isin(VALID_COMPONENTES)].copy()
-        df4["media_pct"] = pd.to_numeric(df4["media_pct"], errors="coerce")
+        df4["media_pct"] = escalar_percentual_serie(df4["media_pct"]).round(1)
         df4["alunos_avaliados"] = pd.to_numeric(df4["alunos_avaliados"], errors="coerce").fillna(0).astype(int)
         df4["hab_criticas"] = pd.to_numeric(df4["hab_criticas"], errors="coerce").fillna(0).astype(int)
         df4["classificacao"] = (

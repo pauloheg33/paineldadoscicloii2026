@@ -16,6 +16,15 @@ def normalizar_ano_label(valor):
     return f"{int(fallback)}º Ano" if pd.notna(fallback) else None
 
 
+def escalar_percentual_serie(serie):
+    numerica = pd.to_numeric(serie, errors="coerce")
+    if numerica.dropna().empty:
+        return numerica
+    if numerica.dropna().abs().max() <= 1.0:
+        return numerica * 100
+    return numerica
+
+
 def chave_escola(valor):
     texto = " ".join(str(valor).strip().upper().split())
     return "".join(
@@ -70,7 +79,7 @@ def load_habilidades():
     df["componente"] = df["componente"].map({"LP": "Língua Portuguesa", "MT": "Matemática"}).fillna(df["componente"])
     df = df[df["componente"].isin(VALID_COMPONENTES)].copy()
     df = df.dropna(subset=["ano_escolar", "escola", "habilidade_codigo"])
-    df["acerto_pct"] = pd.to_numeric(df["acerto_pct"], errors="coerce")
+    df["acerto_pct"] = escalar_percentual_serie(df["acerto_pct"]).round(1)
     df["habilidade_pos"] = df["habilidade_codigo"].str.extract(r"(H\s?\d+)", expand=False).str.replace(" ", "")
     df["habilidade_descritor"] = df["habilidade_codigo"].str.extract(r"\(([^)]+)\)", expand=False).fillna(df["habilidade_codigo"])
     df["faixa"] = df["acerto_pct"].apply(classificar_faixa)
@@ -81,9 +90,9 @@ def load_desempenho():
     path = DATA_DIR / "desempenho_por_ano.xlsx"
     df = pd.read_excel(path, header=None, skiprows=2)
     df.columns = ["escola", "ano_escolar", "lp_pct", "mt_pct", "media_geral"]
-    df["lp_pct"] = pd.to_numeric(df["lp_pct"], errors="coerce")
-    df["mt_pct"] = pd.to_numeric(df["mt_pct"], errors="coerce")
-    df["media_geral"] = pd.to_numeric(df["media_geral"], errors="coerce")
+    df["lp_pct"] = escalar_percentual_serie(df["lp_pct"]).round(1)
+    df["mt_pct"] = escalar_percentual_serie(df["mt_pct"]).round(1)
+    df["media_geral"] = escalar_percentual_serie(df["media_geral"]).round(1)
     df["ano_escolar"] = df["ano_escolar"].apply(normalizar_ano_label)
     df["escola"] = df["escola"].apply(normalizar_nome_escola)
     df = df.dropna(subset=["ano_escolar", "escola"])
