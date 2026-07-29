@@ -10,7 +10,7 @@ from services.data_service import (
     get_comparativo_componentes, get_ranking_habilidades
 )
 
-app = FastAPI(title="Dashboard AVALIE.CE 2026 - Ararendá")
+app = FastAPI(title="Dashboard CICLO II 2026 - Ararendá")
 
 app.add_middleware(
     CORSMiddleware,
