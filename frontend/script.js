@@ -896,15 +896,6 @@ function downloadRelatorioPdf() {
     }
 
     const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const autoTableFn =
-        (window.jspdfAutoTable && typeof window.jspdfAutoTable.default === 'function' && window.jspdfAutoTable.default) ||
-        (typeof window.autoTable === 'function' && window.autoTable) ||
-        (doc && typeof doc.autoTable === 'function' ? (pdf, opts) => pdf.autoTable(opts) : null);
-
-    if (!autoTableFn) {
-        alert('Plugin de tabela PDF não carregado.');
-        return;
-    }
 
     const filtrosTxt = [
         `Escola: ${escola}`,
@@ -912,57 +903,74 @@ function downloadRelatorioPdf() {
         `Componente: ${componente === 'Todos' ? 'Todos' : componente}`
     ];
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Relatório de Habilidades por Escola', 14, 16);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    filtrosTxt.forEach((linha, idx) => doc.text(linha, 14, 24 + (idx * 5)));
-    doc.text(`Total de registros: ${rows.length}`, 14, 39);
+    const marginX = 14;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - (marginX * 2);
+    let y = 16;
 
-    const body = rows.map(row => [
-        row.ano_escolar,
-        row.componente,
-        row.habilidade_pos,
-        row.habilidade_descritor,
-        row.habilidade_descricao,
-        `${row.acerto_pct}%`,
-        row.faixa,
-        row.nivel_dificuldade
-    ]);
+    function drawHeader(pageNumber) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(23, 50, 77);
+        doc.text('Relatório de Habilidades por Escola', marginX, 16);
 
-    autoTableFn(doc, {
-        startY: 44,
-        head: [[
-            'Ano', 'Componente', 'Habilidade', 'Código', 'Descrição', 'Acerto %', 'Faixa', 'Nível'
-        ]],
-        body,
-        styles: {
-            font: 'helvetica',
-            fontSize: 8,
-            cellPadding: 2,
-            lineColor: [226, 232, 240],
-            lineWidth: 0.1
-        },
-        headStyles: {
-            fillColor: [23, 50, 77],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-            fillColor: [248, 250, 252]
-        },
-        columnStyles: {
-            0: { cellWidth: 16 },
-            1: { cellWidth: 28 },
-            2: { cellWidth: 18 },
-            3: { cellWidth: 20 },
-            4: { cellWidth: 62 },
-            5: { cellWidth: 16, halign: 'right' },
-            6: { cellWidth: 18 },
-            7: { cellWidth: 16 }
-        },
-        margin: { left: 10, right: 10 }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(52, 80, 107);
+        filtrosTxt.forEach((linha, idx) => doc.text(linha, marginX, 24 + (idx * 5)));
+        doc.text(`Total de registros: ${rows.length}`, marginX, 39);
+
+        doc.setDrawColor(214, 224, 238);
+        doc.line(marginX, 43, pageWidth - marginX, 43);
+
+        doc.setFontSize(9);
+        doc.setTextColor(124, 140, 165);
+        doc.text(`CICLO II 2026 · ${escola} · Página ${pageNumber}`, marginX, pageHeight - 8);
+        y = 50;
+    }
+
+    function ensureSpace(requiredHeight) {
+        if (y + requiredHeight <= pageHeight - 16) return;
+        doc.addPage();
+        drawHeader(doc.getNumberOfPages());
+    }
+
+    drawHeader(1);
+
+    rows.forEach((row, idx) => {
+        const descricao = doc.splitTextToSize(row.habilidade_descricao || '', contentWidth - 4);
+        const meta = [
+            `Ano: ${row.ano_escolar || '-'}`,
+            `Componente: ${row.componente || '-'}`,
+            `Acerto: ${row.acerto_pct}%`,
+            `Faixa: ${row.faixa || '-'}`,
+            `Nível: ${row.nivel_dificuldade || '-'}`
+        ].join('  |  ');
+        const metaLines = doc.splitTextToSize(meta, contentWidth - 4);
+        const blockHeight = 12 + (descricao.length * 5) + (metaLines.length * 4.5) + 10;
+
+        ensureSpace(blockHeight);
+
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(23, 50, 77);
+        doc.text(`${row.habilidade_pos} (${row.habilidade_descritor})`, marginX + 3, y + 2);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(52, 80, 107);
+        doc.text(descricao, marginX + 3, y + 9);
+
+        const metaY = y + 9 + (descricao.length * 5) + 1;
+        doc.setFontSize(8.5);
+        doc.setTextColor(95, 111, 108);
+        doc.text(metaLines, marginX + 3, metaY);
+
+        y += blockHeight + 4;
     });
 
     const fileBase = `relatorio_${slugify(escola)}_${slugify(ano === 'Todos' ? 'todos-anos' : ano)}_${slugify(componente === 'Todos' ? 'todos-componentes' : componente)}`;
