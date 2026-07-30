@@ -994,42 +994,46 @@ function downloadRelatorioPdf() {
             doc.rect(0, 28, pageWidth, 10, 'F');
 
             const iconX = marginX;
-            const iconY = 8;
-            const iconSize = 7;
-            const textX = iconX + 11;
+            const iconY = 8.5;
+            const textX = iconX + 15;
 
-            doc.setFillColor(125, 211, 252);
-            doc.setDrawColor(125, 211, 252);
-            doc.lines(
-                [
-                    [iconSize, -4],
-                    [iconSize, 4],
-                    [-iconSize, 4],
-                    [-iconSize, -4]
-                ],
-                iconX + 7,
-                iconY + 3,
-                [1, 1],
-                'F',
-                true
-            );
+            doc.setDrawColor(23, 58, 94);
+            doc.setLineWidth(0.4);
+
             doc.setFillColor(96, 165, 250);
             doc.lines(
                 [
-                    [7, -4],
-                    [0, 4],
-                    [-7, -4],
-                    [7, 0]
+                    [5.5, -3.2],
+                    [5.5, 3.2],
+                    [-5.5, 3.2],
+                    [-5.5, -3.2]
                 ],
-                iconX + 7,
-                iconY - 1,
+                iconX + 5.5,
+                iconY + 2.8,
                 [1, 1],
                 'F',
                 true
             );
-            doc.setDrawColor(23, 58, 94);
-            doc.setLineWidth(1);
-            doc.line(iconX + 7, iconY + 3, iconX + 7, iconY + 10);
+
+            doc.setFillColor(125, 211, 252);
+            doc.lines(
+                [
+                    [5.5, -3.2],
+                    [0, 3.2],
+                    [-5.5, -3.2],
+                    [5.5, 0]
+                ],
+                iconX + 5.5,
+                iconY - 0.8,
+                [1, 1],
+                'F',
+                true
+            );
+
+            doc.setDrawColor(125, 211, 252);
+            doc.line(iconX + 11.2, iconY + 1.4, iconX + 11.2, iconY + 6.8);
+            doc.setFillColor(125, 211, 252);
+            doc.circle(iconX + 11.2, iconY + 7.6, 0.7, 'F');
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
