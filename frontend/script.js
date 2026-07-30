@@ -988,6 +988,7 @@ function downloadRelatorioPdf() {
 
     function drawHeader(pageNumber) {
         if (pageNumber === 1) {
+            const centerX = pageWidth / 2;
             doc.setFillColor(23, 58, 94);
             doc.rect(0, 0, pageWidth, 28, 'F');
             doc.setFillColor(36, 80, 122);
@@ -996,14 +997,14 @@ function downloadRelatorioPdf() {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.setTextColor(255, 255, 255);
-            doc.text('SADE', marginX, 14);
+            doc.text('SADE', centerX, 14, { align: 'center' });
 
             doc.setFontSize(13);
-            doc.text('Relatório de Habilidades por Escola', marginX, 24);
+            doc.text('Relatório de Habilidades por Escola', centerX, 24, { align: 'center' });
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9.5);
-            doc.text('Painel de Resultados — CICLO II 2026', marginX, 34);
+            doc.text('PAINEL DE RESULTADOS — CICLO II 2026', centerX, 34, { align: 'center' });
 
             doc.setTextColor(23, 50, 77);
             doc.setFillColor(248, 250, 252);
@@ -1013,7 +1014,7 @@ function downloadRelatorioPdf() {
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9.5);
-            doc.text('Coordenadoria de Formação, Estatística e Avaliação Educacional · Município de Ararendá', marginX + 4, 52);
+            doc.text('COORDENADORIA DE FORMAÇÃO, ESTATÍSTICA E AVALIAÇÃO EDUCACIONAL · MUNICÍPIO DE ARARENDÁ', marginX + 4, 52);
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8.7);
@@ -1037,7 +1038,7 @@ function downloadRelatorioPdf() {
 
         doc.setFontSize(9);
         doc.setTextColor(124, 140, 165);
-        doc.text(`Painel de Resultados — CICLO II 2026 · ${escola}`, marginX, pageHeight - 8);
+        doc.text(`PAINEL DE RESULTADOS — CICLO II 2026 · ${escola}`, marginX, pageHeight - 8);
         doc.text(`Emitido em ${emittedAt} · Página ${pageNumber}`, pageWidth - marginX - 52, pageHeight - 8);
     }
 
