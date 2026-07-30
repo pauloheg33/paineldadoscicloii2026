@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 .env
 dist/
+dist_palette_check/
