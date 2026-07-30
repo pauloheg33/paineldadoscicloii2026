@@ -1,10 +1,10 @@
 // ===== CONFIGURAÇÃO GLOBAL =====
 const FAIXA_COLORS = {
-    'Crítico': { bg: '#fee2e2', border: '#ef4444', text: '#991b1b' },
-    'Atenção': { bg: '#ffedd5', border: '#f97316', text: '#9a3412' },
-    'Intermediário': { bg: '#fef9c3', border: '#facc15', text: '#854d0e' },
-    'Regular': { bg: '#fef9c3', border: '#facc15', text: '#854d0e' },
-    'Adequado': { bg: '#dcfce7', border: '#22c55e', text: '#166534' }
+    'Crítico': { bg: '#FEE2E2', border: '#F87171', text: '#B45353' },
+    'Atenção': { bg: '#FEF3C7', border: '#FBBF24', text: '#A16207' },
+    'Intermediário': { bg: '#FEF3C7', border: '#FBBF24', text: '#8A650F' },
+    'Regular': { bg: '#FEF3C7', border: '#FBBF24', text: '#8A650F' },
+    'Adequado': { bg: '#DCFCE7', border: '#4ADE80', text: '#1F8F56' }
 };
 
 let charts = {};
@@ -421,8 +421,8 @@ function renderHabDetail(h) {
 // ===== ESCOLAS — ANÁLISE COMPLETA =====
 
 function escClassColor(cls) {
-    const m = { 'Adequado': '#22c55e', 'Regular': '#facc15', 'Atenção': '#f97316', 'Crítico': '#ef4444' };
-    return m[cls] || '#94a3b8';
+    const m = { 'Adequado': '#4ADE80', 'Regular': '#FBBF24', 'Atenção': '#FBBF24', 'Crítico': '#F87171' };
+    return m[cls] || '#7C8CA5';
 }
 
 function shortEscola(nome) {
@@ -435,7 +435,7 @@ function loadEscolas() {
 
     if (!analiseData) {
         const strip = document.getElementById('esc-kpi-strip');
-        if (strip) strip.innerHTML = '<p style="color:#64748b;padding:8px 0;">Carregando dados de análise…</p>';
+        if (strip) strip.innerHTML = '<p style="color:#7C8CA5;padding:8px 0;">Carregando dados de análise…</p>';
         return;
     }
 
@@ -502,7 +502,7 @@ function renderEscolasRanking(escolas, rede) {
                     label: 'Média da Rede (' + rede.media + '%)',
                     data: Array(sorted.length).fill(rede.media),
                     type: 'line',
-                    borderColor: '#0f2b4c',
+                    borderColor: '#1E2F4D',
                     borderDash: [8, 4],
                     borderWidth: 2,
                     pointRadius: 0,
@@ -527,7 +527,7 @@ function renderEscolasRanking(escolas, rede) {
                     display: ctx => ctx.datasetIndex === 0,
                     anchor: 'end', align: 'end', offset: 2,
                     font: { size: 10, weight: '700' },
-                    color: '#0f2b4c',
+                    color: '#1E2F4D',
                     textStrokeColor: '#fff', textStrokeWidth: 3,
                     formatter: v => v + '%'
                 }
@@ -552,10 +552,10 @@ function renderEscolasLpMt(escolas, rede) {
         data: {
             labels,
             datasets: [
-                { label: 'LP', data: sorted.map(e => e.lp), backgroundColor: '#3b82f6aa', borderColor: '#3b82f6', borderWidth: 1.5, borderRadius: 3 },
-                { label: 'Matemática', data: sorted.map(e => e.mt), backgroundColor: '#f59e0baa', borderColor: '#f59e0b', borderWidth: 1.5, borderRadius: 3 },
-                { label: 'Rede LP (' + rede.lp + '%)', data: Array(n).fill(rede.lp), type: 'line', borderColor: '#1d4ed8', borderDash: [6, 3], borderWidth: 2, pointRadius: 0, fill: false },
-                { label: 'Rede MT (' + rede.mt + '%)', data: Array(n).fill(rede.mt), type: 'line', borderColor: '#b45309', borderDash: [6, 3], borderWidth: 2, pointRadius: 0, fill: false }
+                { label: 'LP', data: sorted.map(e => e.lp), backgroundColor: '#5B7DB1aa', borderColor: '#5B7DB1', borderWidth: 1.5, borderRadius: 3 },
+                { label: 'Matemática', data: sorted.map(e => e.mt), backgroundColor: '#A78BFAaa', borderColor: '#A78BFA', borderWidth: 1.5, borderRadius: 3 },
+                { label: 'Rede LP (' + rede.lp + '%)', data: Array(n).fill(rede.lp), type: 'line', borderColor: '#3F5F90', borderDash: [6, 3], borderWidth: 2, pointRadius: 0, fill: false },
+                { label: 'Rede MT (' + rede.mt + '%)', data: Array(n).fill(rede.mt), type: 'line', borderColor: '#8B72DB', borderDash: [6, 3], borderWidth: 2, pointRadius: 0, fill: false }
             ]
         },
         options: {
@@ -567,7 +567,7 @@ function renderEscolasLpMt(escolas, rede) {
                     display: ctx => ctx.datasetIndex < 2,
                     anchor: 'end', align: 'end', offset: 1,
                     font: { size: 8, weight: '700' },
-                    color: '#0f2b4c',
+                    color: '#1E2F4D',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     formatter: v => v + '%'
                 }
@@ -604,16 +604,16 @@ function renderEscolasEtapas(detalhe, rede) {
         data: {
             labels: present,
             datasets: [
-                { label: 'LP', data: etapaLp, backgroundColor: '#3b82f6aa', borderColor: '#3b82f6', borderWidth: 1.5, borderRadius: 3 },
-                { label: 'Matemática', data: etapaMt, backgroundColor: '#f59e0baa', borderColor: '#f59e0b', borderWidth: 1.5, borderRadius: 3 },
+                { label: 'LP', data: etapaLp, backgroundColor: '#5B7DB1aa', borderColor: '#5B7DB1', borderWidth: 1.5, borderRadius: 3 },
+                { label: 'Matemática', data: etapaMt, backgroundColor: '#A78BFAaa', borderColor: '#A78BFA', borderWidth: 1.5, borderRadius: 3 },
                 {
                     label: 'Média p/ Etapa', data: etapaMedia, type: 'line',
-                    borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.1)',
-                    borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#10b981', fill: false, tension: 0.3
+                    borderColor: '#4ADE80', backgroundColor: 'rgba(74,222,128,.12)',
+                    borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#4ADE80', fill: false, tension: 0.3
                 },
                 {
                     label: 'Rede (' + rede.media + '%)', data: Array(n).fill(rede.media), type: 'line',
-                    borderColor: '#0f2b4c', borderDash: [8, 4], borderWidth: 2, pointRadius: 0, fill: false
+                    borderColor: '#1E2F4D', borderDash: [8, 4], borderWidth: 2, pointRadius: 0, fill: false
                 }
             ]
         },
@@ -625,7 +625,7 @@ function renderEscolasEtapas(detalhe, rede) {
                 datalabels: {
                     display: ctx => ctx.datasetIndex < 2,
                     anchor: 'end', align: 'end', offset: 1,
-                    font: { size: 9, weight: '700' }, color: '#0f2b4c',
+                    font: { size: 9, weight: '700' }, color: '#1E2F4D',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     formatter: v => v != null ? v + '%' : ''
                 }
@@ -655,11 +655,11 @@ function renderEscolasCriticas(escolas) {
                 data: values,
                 backgroundColor: values.map(v => {
                     const r = v / maxVal;
-                    return r > 0.7 ? '#ef444499' : r > 0.5 ? '#f9731699' : r > 0.3 ? '#facc1599' : '#22c55e99';
+                    return r > 0.7 ? '#F8717199' : r > 0.5 ? '#FBBF2499' : r > 0.3 ? '#FDE68A99' : '#4ADE8099';
                 }),
                 borderColor: values.map(v => {
                     const r = v / maxVal;
-                    return r > 0.7 ? '#ef4444' : r > 0.5 ? '#f97316' : r > 0.3 ? '#facc15' : '#22c55e';
+                    return r > 0.7 ? '#F87171' : r > 0.5 ? '#FBBF24' : r > 0.3 ? '#FBBF24' : '#4ADE80';
                 }),
                 borderWidth: 1.5,
                 borderRadius: 4
@@ -673,7 +673,7 @@ function renderEscolasCriticas(escolas) {
                 tooltip: { callbacks: { label: c => c.raw + ' habilidade(s) crítica(s)' } },
                 datalabels: {
                     display: true, anchor: 'end', align: 'end', offset: 2,
-                    font: { size: 10, weight: '700' }, color: '#0f2b4c',
+                    font: { size: 10, weight: '700' }, color: '#1E2F4D',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     formatter: v => v
                 }
@@ -693,11 +693,11 @@ function renderEscolasHeatmap(detalhe, escolas) {
     const present = [...new Set(detalhe.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const sortedEsc = [...escolas].sort((a, b) => b.media - a.media);
 
-    const clsBg  = { 'Adequado': '#dcfce7', 'Regular': '#fef9c3', 'Atenção': '#ffedd5', 'Crítico': '#fee2e2' };
-    const clsTxt = { 'Adequado': '#166534', 'Regular': '#854d0e', 'Atenção': '#9a3412', 'Crítico': '#991b1b' };
+    const clsBg  = { 'Adequado': '#DCFCE7', 'Regular': '#FEF3C7', 'Atenção': '#FEF3C7', 'Crítico': '#FEE2E2' };
+    const clsTxt = { 'Adequado': '#1F8F56', 'Regular': '#8A650F', 'Atenção': '#A16207', 'Crítico': '#B45353' };
 
     const cellStyle = 'text-align:center;padding:7px 6px;border-bottom:1px solid #e2e8f0;';
-    const thStyle = 'padding:8px 10px;background:#0f2b4c;color:#fff;font-size:11px;font-weight:600;';
+    const thStyle = 'padding:8px 10px;background:#1E2F4D;color:#fff;font-size:11px;font-weight:600;';
 
     let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr>
@@ -707,9 +707,9 @@ function renderEscolasHeatmap(detalhe, escolas) {
         </tr></thead><tbody>`;
 
     sortedEsc.forEach((esc, idx) => {
-        const rowBg = idx % 2 === 0 ? '#f8fafc' : '#fff';
+        const rowBg = idx % 2 === 0 ? '#F4F7FC' : '#fff';
         html += `<tr style="background:${rowBg};">`;
-        html += `<td style="padding:8px 10px;font-weight:600;color:#0f2b4c;border-bottom:1px solid #e2e8f0;">${sanitize(esc.escola)}</td>`;
+        html += `<td style="padding:8px 10px;font-weight:600;color:#1E2F4D;border-bottom:1px solid #e2e8f0;">${sanitize(esc.escola)}</td>`;
         present.forEach(etapa => {
             const row = detalhe.find(r => r.escola === esc.escola && r.ano_escolar === etapa);
             if (row) {
@@ -720,7 +720,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
                     <div style="font-size:9px;color:${tc};margin-top:2px;">${row.classificacao}</div>
                 </td>`;
             } else {
-                html += `<td style="${cellStyle}color:#cbd5e1;">—</td>`;
+                html += `<td style="${cellStyle}color:#D9E2F0;">—</td>`;
             }
         });
         const bg = clsBg[esc.classificacao] || '#f1f5f9';
@@ -732,14 +732,14 @@ function renderEscolasHeatmap(detalhe, escolas) {
     });
 
     // Linha da rede
-    html += `<tr style="background:#f0f2f5;font-weight:700;">
-        <td style="padding:8px 10px;color:#0f2b4c;border-bottom:1px solid #e2e8f0;">Média da Rede</td>`;
+    html += `<tr style="background:#F4F7FC;font-weight:700;">
+        <td style="padding:8px 10px;color:#1E2F4D;border-bottom:1px solid #e2e8f0;">Média da Rede</td>`;
     present.forEach(etapa => {
         const rows = detalhe.filter(r => r.ano_escolar === etapa && r.media_geral != null);
         const avg = rows.length ? rd(mean(rows.map(r => r.media_geral)), 1) : null;
-        html += `<td style="${cellStyle}background:#e2e8f0;">${avg != null ? `<span style="font-weight:700;color:#0f2b4c;">${avg}%</span>` : '—'}</td>`;
+        html += `<td style="${cellStyle}background:#E8EEF8;">${avg != null ? `<span style="font-weight:700;color:#1E2F4D;">${avg}%</span>` : '—'}</td>`;
     });
-    html += `<td style="${cellStyle}background:#e2e8f0;"><span style="font-weight:800;color:#0f2b4c;">—</span></td></tr>`;
+    html += `<td style="${cellStyle}background:#E8EEF8;"><span style="font-weight:800;color:#1E2F4D;">—</span></td></tr>`;
     html += `</tbody></table>`;
 
     // Legenda
@@ -790,12 +790,12 @@ function destroyChart(id) {
 }
 
 function getBarColors(values, faixas) {
-    if (faixas) return faixas.map(f => FAIXA_COLORS[f]?.border || '#94a3b8');
+    if (faixas) return faixas.map(f => FAIXA_COLORS[f]?.border || '#7C8CA5');
     return values.map(v => {
-        if (v <= 40) return '#ef4444';
-        if (v <= 60) return '#f97316';
-        if (v <= 80) return '#facc15';
-        return '#22c55e';
+        if (v <= 40) return '#F87171';
+        if (v <= 60) return '#FBBF24';
+        if (v <= 80) return '#FBBF24';
+        return '#4ADE80';
     });
 }
 
@@ -823,7 +823,7 @@ function renderBarChart(id, labels, values, faixas, label) {
                     align: 'end',
                     offset: 1,
                     font: { size: 10, weight: '800' },
-                    color: '#0f2b4c',
+                    color: '#1E2F4D',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 3,
                     formatter: v => v + '%'
@@ -840,7 +840,7 @@ function renderBarChart(id, labels, values, faixas, label) {
 function renderDoughnutChart(id, labels, values) {
     destroyChart(id);
     const ctx = document.getElementById(id).getContext('2d');
-    const colors = labels.map(l => FAIXA_COLORS[l]?.border || '#94a3b8');
+    const colors = labels.map(l => FAIXA_COLORS[l]?.border || '#7C8CA5');
     charts[id] = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -870,10 +870,10 @@ function renderHorizontalBar(id, labels, values, descricoes, isLow) {
     destroyChart(id);
     const ctx = document.getElementById(id).getContext('2d');
     const colors = values.map(v => {
-        if (v <= 40) return '#ef4444';
-        if (v <= 60) return '#f97316';
-        if (v <= 80) return '#facc15';
-        return '#22c55e';
+        if (v <= 40) return '#F87171';
+        if (v <= 60) return '#FBBF24';
+        if (v <= 80) return '#FBBF24';
+        return '#4ADE80';
     });
     charts[id] = new Chart(ctx, {
         type: 'bar',
@@ -898,7 +898,7 @@ function renderHorizontalBar(id, labels, values, descricoes, isLow) {
                     align: 'end',
                     offset: 2,
                     font: { size: 10, weight: '800' },
-                    color: '#0f2b4c',
+                    color: '#1E2F4D',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 3,
                     formatter: v => v + '%'
