@@ -815,25 +815,38 @@ function getReportLocalFilters() {
     };
 }
 
-function compareRelatorioRows(a, b, ordenacao) {
+function compareRelatorioRows(a, b, ordenacao, anoFiltro = 'Todos', componenteFiltro = 'Todos') {
+    const groupByAno = anoFiltro === 'Todos';
+    const groupByComponente = componenteFiltro === 'Todos';
+
+    if (groupByAno) {
+        const anoDiff = anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar);
+        if (anoDiff !== 0) return anoDiff;
+    }
+
+    if (groupByComponente) {
+        const compDiff = (a.componente || '').localeCompare(b.componente || '');
+        if (compDiff !== 0) return compDiff;
+    }
+
     if (ordenacao === 'acerto_asc' && a.acerto_pct !== b.acerto_pct) {
         return a.acerto_pct - b.acerto_pct;
     }
     if (ordenacao === 'codigo_asc') {
         return (
             (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '') ||
+            b.acerto_pct - a.acerto_pct ||
             anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
-            (a.componente || '').localeCompare(b.componente || '') ||
-            b.acerto_pct - a.acerto_pct
+            (a.componente || '').localeCompare(b.componente || '')
         );
     }
     if (a.acerto_pct !== b.acerto_pct) {
         return b.acerto_pct - a.acerto_pct;
     }
     return (
+        (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '') ||
         anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
-        (a.componente || '').localeCompare(b.componente || '') ||
-        (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '')
+        (a.componente || '').localeCompare(b.componente || '')
     );
 }
 
@@ -855,7 +868,7 @@ function getRelatorioRows(escola, ano, componente, faixa = 'Todas', ordenacao = 
     } else if (faixa && faixa !== 'Todas') {
         rows = rows.filter(r => r.faixa === faixa);
     }
-    rows.sort((a, b) => compareRelatorioRows(a, b, ordenacao));
+    rows.sort((a, b) => compareRelatorioRows(a, b, ordenacao, ano, componente));
     return rows;
 }
 
@@ -1031,7 +1044,9 @@ function downloadRelatorioPdf() {
     drawHeader(1);
 
     rows.forEach((row, idx) => {
-        const descricao = doc.splitTextToSize(row.habilidade_descricao || '', contentWidth - 4);
+        const descricaoWidth = contentWidth - 12;
+        const metaWidth = contentWidth - 12;
+        const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
         const meta = [
             `Ano: ${row.ano_escolar || '-'}`,
             `Componente: ${row.componente || '-'}`,
@@ -1039,8 +1054,8 @@ function downloadRelatorioPdf() {
             `Faixa: ${row.faixa || '-'}`,
             `Nível: ${row.nivel_dificuldade || '-'}`
         ].join('  |  ');
-        const metaLines = doc.splitTextToSize(meta, contentWidth - 4);
-        const blockHeight = 12 + (descricao.length * 5) + (metaLines.length * 4.5) + 10;
+        const metaLines = doc.splitTextToSize(meta, metaWidth);
+        const blockHeight = 12 + (descricao.length * 5.2) + (metaLines.length * 4.8) + 11;
         const accent = faixaAccentColor(row.faixa);
 
         ensureSpace(blockHeight);
@@ -1064,12 +1079,12 @@ function downloadRelatorioPdf() {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(52, 80, 107);
-        doc.text(descricao, marginX + 3, y + 9);
+        doc.text(descricao, marginX + 4, y + 9, { maxWidth: descricaoWidth });
 
-        const metaY = y + 9 + (descricao.length * 5) + 1;
+        const metaY = y + 9 + (descricao.length * 5.2) + 1.5;
         doc.setFontSize(8.5);
         doc.setTextColor(95, 111, 108);
-        doc.text(metaLines, marginX + 3, metaY);
+        doc.text(metaLines, marginX + 4, metaY, { maxWidth: metaWidth });
 
         y += blockHeight + 4;
     });
