@@ -36,10 +36,6 @@
                 <span class="material-icons-round">apartment</span>
                 <span class="nav-label">Escolas</span>
             </li>
-            <li class="nav-item" data-page="turmas">
-                <span class="material-icons-round">groups</span>
-                <span class="nav-label">Turmas</span>
-            </li>
             <li class="nav-item" data-page="detalhamento">
                 <span class="material-icons-round">table_chart</span>
                 <span class="nav-label">Detalhamento</span>
@@ -208,42 +204,6 @@
                 <div id="esc-heatmap" style="overflow-x:auto;"></div>
             </div>
 
-        </section>
-
-        <!-- PAGE: TURMAS -->
-        <section id="page-turmas" class="page">
-            <div class="section-header">
-                <h2>Desempenho por Turma</h2>
-                <p>Resultados por turma com filtros por escola, ano e componente curricular.</p>
-            </div>
-            <div class="kpi-strip" id="tur-kpi-strip"></div>
-            <div class="grid-2col">
-                <div class="card chart-card">
-                    <h3 class="card-title">Ranking das Turmas</h3>
-                    <div class="chart-wrapper" style="height:320px;"><canvas id="chart-turmas-ranking"></canvas></div>
-                </div>
-                <div class="card chart-card">
-                    <h3 class="card-title">Distribuição por Classificação</h3>
-                    <div class="chart-wrapper"><canvas id="chart-turmas-classificacao"></canvas></div>
-                </div>
-            </div>
-            <div class="table-wrapper" style="margin-top:12px;">
-                <table id="tabela-turmas">
-                    <thead>
-                        <tr>
-                            <th>Escola</th>
-                            <th>Turma</th>
-                            <th>Ano</th>
-                            <th>Componentes</th>
-                            <th>Média %</th>
-                            <th>Alunos</th>
-                            <th>Hab. Críticas</th>
-                            <th>Classificação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-turmas-body"></tbody>
-                </table>
-            </div>
         </section>
 
         <!-- PAGE: DETALHAMENTO -->
