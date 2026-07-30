@@ -84,6 +84,24 @@ print(f'Fallback build OK em {temp_dir}')
     }
 }
 
+function Remove-TempDirectoryIfExists {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DirectoryPath
+    )
+
+    if (-not (Test-Path $DirectoryPath)) {
+        return
+    }
+
+    try {
+        Remove-Item -LiteralPath $DirectoryPath -Recurse -Force
+    }
+    catch {
+        Write-Host "Aviso: não foi possível remover $DirectoryPath agora. Seguindo com a publicação." -ForegroundColor Yellow
+    }
+}
+
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repoRoot
 
@@ -102,13 +120,9 @@ if ([string]::IsNullOrWhiteSpace($branch)) {
 }
 
 Write-Step "Limpando pasta temporária de validação, se existir"
-if (Test-Path "dist_palette_check") {
-    try {
-        Remove-Item -LiteralPath "dist_palette_check" -Recurse -Force
-    }
-    catch {
-        Write-Host "Aviso: não foi possível remover dist_palette_check agora. Seguindo com a publicação." -ForegroundColor Yellow
-    }
+Remove-TempDirectoryIfExists -DirectoryPath "dist_palette_check"
+Get-ChildItem -Directory -Force -Filter "dist_build_verify*" | ForEach-Object {
+    Remove-TempDirectoryIfExists -DirectoryPath $_.FullName
 }
 
 Write-Step "Gerando build estático"

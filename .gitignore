@@ -4,3 +4,5 @@ __pycache__/
 .env
 dist/
 dist_palette_check/
+dist_build_verify/
+dist_build_verify_*/
