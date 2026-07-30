@@ -815,6 +815,21 @@ function getReportLocalFilters() {
     };
 }
 
+function renderSiteIconDataUrl() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 96;
+    canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#7DD3FC';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '72px "Material Icons Round"';
+    ctx.fillText('school', canvas.width / 2, canvas.height / 2);
+    return canvas.toDataURL('image/png');
+}
+
 function compareRelatorioRows(a, b, ordenacao, anoFiltro = 'Todos', componenteFiltro = 'Todos') {
     const groupByAno = anoFiltro === 'Todos';
     const groupByComponente = componenteFiltro === 'Todos';
@@ -939,7 +954,7 @@ function loadRelatorios() {
     btn.disabled = false;
 }
 
-function downloadRelatorioPdf() {
+async function downloadRelatorioPdf() {
     const { escola, ano, componente } = getFilters();
     const { faixa, ordenacao } = getReportLocalFilters();
     const rows = getRelatorioRows(escola, ano, componente, faixa, ordenacao);
@@ -994,46 +1009,12 @@ function downloadRelatorioPdf() {
             doc.rect(0, 28, pageWidth, 10, 'F');
 
             const iconX = marginX;
-            const iconY = 8.5;
-            const textX = iconX + 15;
-
-            doc.setDrawColor(23, 58, 94);
-            doc.setLineWidth(0.4);
-
-            doc.setFillColor(96, 165, 250);
-            doc.lines(
-                [
-                    [5.5, -3.2],
-                    [5.5, 3.2],
-                    [-5.5, 3.2],
-                    [-5.5, -3.2]
-                ],
-                iconX + 5.5,
-                iconY + 2.8,
-                [1, 1],
-                'F',
-                true
-            );
-
-            doc.setFillColor(125, 211, 252);
-            doc.lines(
-                [
-                    [5.5, -3.2],
-                    [0, 3.2],
-                    [-5.5, -3.2],
-                    [5.5, 0]
-                ],
-                iconX + 5.5,
-                iconY - 0.8,
-                [1, 1],
-                'F',
-                true
-            );
-
-            doc.setDrawColor(125, 211, 252);
-            doc.line(iconX + 11.2, iconY + 1.4, iconX + 11.2, iconY + 6.8);
-            doc.setFillColor(125, 211, 252);
-            doc.circle(iconX + 11.2, iconY + 7.6, 0.7, 'F');
+            const iconY = 7.4;
+            const textX = iconX + 14;
+            const iconDataUrl = renderSiteIconDataUrl();
+            if (iconDataUrl) {
+                doc.addImage(iconDataUrl, 'PNG', iconX - 0.8, iconY - 0.3, 8.8, 8.8, undefined, 'FAST');
+            }
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
