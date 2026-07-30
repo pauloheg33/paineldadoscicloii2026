@@ -878,7 +878,9 @@ function getRelatorioRows(escola, ano, componente, faixa = 'Todas', ordenacao = 
         faixa: r.faixa,
         nivel_dificuldade: r.nivel_dificuldade
     }));
-    if (faixa === 'Crítico + Intermediário') {
+    if (faixa === 'Crítico + Atenção') {
+        rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Atenção');
+    } else if (faixa === 'Crítico + Intermediário') {
         rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Intermediário');
     } else if (faixa && faixa !== 'Todas') {
         rows = rows.filter(r => r.faixa === faixa);
