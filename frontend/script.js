@@ -988,23 +988,60 @@ function downloadRelatorioPdf() {
 
     function drawHeader(pageNumber) {
         if (pageNumber === 1) {
-            const centerX = pageWidth / 2;
             doc.setFillColor(23, 58, 94);
             doc.rect(0, 0, pageWidth, 28, 'F');
             doc.setFillColor(36, 80, 122);
             doc.rect(0, 28, pageWidth, 10, 'F');
 
+            const iconX = marginX;
+            const iconY = 8;
+            const iconSize = 7;
+            const textX = iconX + 11;
+
+            doc.setFillColor(125, 211, 252);
+            doc.setDrawColor(125, 211, 252);
+            doc.lines(
+                [
+                    [iconSize, -4],
+                    [iconSize, 4],
+                    [-iconSize, 4],
+                    [-iconSize, -4]
+                ],
+                iconX + 7,
+                iconY + 3,
+                [1, 1],
+                'F',
+                true
+            );
+            doc.setFillColor(96, 165, 250);
+            doc.lines(
+                [
+                    [7, -4],
+                    [0, 4],
+                    [-7, -4],
+                    [7, 0]
+                ],
+                iconX + 7,
+                iconY - 1,
+                [1, 1],
+                'F',
+                true
+            );
+            doc.setDrawColor(23, 58, 94);
+            doc.setLineWidth(1);
+            doc.line(iconX + 7, iconY + 3, iconX + 7, iconY + 10);
+
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.setTextColor(255, 255, 255);
-            doc.text('SADE', centerX, 14, { align: 'center' });
+            doc.text('SADE', textX, 14);
 
             doc.setFontSize(13);
-            doc.text('Relatório de Habilidades por Escola', centerX, 24, { align: 'center' });
+            doc.text('Relatório de Habilidades por Escola', marginX, 24);
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9.5);
-            doc.text('PAINEL DE RESULTADOS — CICLO II 2026', centerX, 34, { align: 'center' });
+            doc.text('PAINEL DE RESULTADOS — CICLO II 2026', marginX, 34);
 
             doc.setTextColor(23, 50, 77);
             doc.setFillColor(248, 250, 252);
