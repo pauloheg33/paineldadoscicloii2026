@@ -987,52 +987,58 @@ function downloadRelatorioPdf() {
     }
 
     function drawHeader(pageNumber) {
-        doc.setFillColor(23, 58, 94);
-        doc.rect(0, 0, pageWidth, 28, 'F');
-        doc.setFillColor(36, 80, 122);
-        doc.rect(0, 28, pageWidth, 10, 'F');
+        if (pageNumber === 1) {
+            doc.setFillColor(23, 58, 94);
+            doc.rect(0, 0, pageWidth, 28, 'F');
+            doc.setFillColor(36, 80, 122);
+            doc.rect(0, 28, pageWidth, 10, 'F');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(18);
-        doc.setTextColor(255, 255, 255);
-        doc.text('SADE', marginX, 14);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(255, 255, 255);
+            doc.text('SADE', marginX, 14);
 
-        doc.setFontSize(13);
-        doc.text('Relatório de Habilidades por Escola', marginX, 24);
+            doc.setFontSize(13);
+            doc.text('Relatório de Habilidades por Escola', marginX, 24);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.5);
-        doc.text('Painel de Resultados — CICLO II 2026', marginX, 34);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.text('Painel de Resultados — CICLO II 2026', marginX, 34);
 
-        doc.setTextColor(23, 50, 77);
-        doc.setFillColor(248, 250, 252);
-        doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'F');
-        doc.setDrawColor(214, 224, 238);
-        doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'S');
+            doc.setTextColor(23, 50, 77);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'F');
+            doc.setDrawColor(214, 224, 238);
+            doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'S');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.5);
-        doc.text('Coordenadoria de Formação, Estatística e Avaliação Educacional · Município de Ararendá', marginX + 4, 52);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.text('Coordenadoria de Formação, Estatística e Avaliação Educacional · Município de Ararendá', marginX + 4, 52);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.7);
-        filtrosTxt.forEach((linha, idx) => {
-            const col = idx < 3 ? 0 : 1;
-            const row = idx % 3;
-            const x = marginX + 4 + (col * (contentWidth / 2));
-            const yy = 58 + (row * 4.6);
-            doc.text(linha, x, yy);
-        });
-        doc.text(`Total de habilidades: ${rows.length}`, marginX + 4, 71);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.7);
+            filtrosTxt.forEach((linha, idx) => {
+                const col = idx < 3 ? 0 : 1;
+                const row = idx % 3;
+                const x = marginX + 4 + (col * (contentWidth / 2));
+                const yy = 58 + (row * 4.6);
+                doc.text(linha, x, yy);
+            });
+            doc.text(`Total de habilidades: ${rows.length}`, marginX + 4, 71);
 
-        doc.setDrawColor(214, 224, 238);
-        doc.line(marginX, 78, pageWidth - marginX, 78);
+            doc.setDrawColor(214, 224, 238);
+            doc.line(marginX, 78, pageWidth - marginX, 78);
+            y = 86;
+        } else {
+            doc.setDrawColor(214, 224, 238);
+            doc.line(marginX, 16, pageWidth - marginX, 16);
+            y = 24;
+        }
 
         doc.setFontSize(9);
         doc.setTextColor(124, 140, 165);
         doc.text(`Painel de Resultados — CICLO II 2026 · ${escola}`, marginX, pageHeight - 8);
         doc.text(`Emitido em ${emittedAt} · Página ${pageNumber}`, pageWidth - marginX - 52, pageHeight - 8);
-        y = 86;
     }
 
     function ensureSpace(requiredHeight) {
