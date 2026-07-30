@@ -12,10 +12,10 @@ function Write-Step($text) {
 
 function Resolve-PythonCommand {
     if (Get-Command python -ErrorAction SilentlyContinue) {
-        return @("python")
+        return ,@("python")
     }
     if (Get-Command py -ErrorAction SilentlyContinue) {
-        return @("py", "-3")
+        return ,@("py", "-3")
     }
     throw "Python não encontrado. Instale/configure o Python antes de publicar."
 }
@@ -38,6 +38,52 @@ function Invoke-External {
     }
 }
 
+function Invoke-BuildWithFallback {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$PythonCommand
+    )
+
+    try {
+        Invoke-External -CommandParts ($PythonCommand + @("build.py"))
+        return
+    }
+    catch {
+        Write-Host "Aviso: build padrão falhou, possivelmente porque a pasta dist está em uso. Tentando validação em pasta temporária..." -ForegroundColor Yellow
+    }
+
+    $tempBuildScript = Join-Path $env:TEMP ("codex_build_fallback_" + [guid]::NewGuid().ToString("N") + ".py")
+    $tempDistDir = Join-Path $env:TEMP ("painel_build_check_" + [guid]::NewGuid().ToString("N"))
+    $repoPath = (Get-Location).Path
+    $scriptContent = @"
+import shutil
+import sys
+from pathlib import Path
+sys.path.insert(0, r'''$repoPath''')
+import build as site_build
+
+temp_dir = Path(r'''$tempDistDir''')
+if temp_dir.exists():
+    shutil.rmtree(temp_dir)
+site_build.DIST_DIR = temp_dir
+site_build.build()
+print(f'Fallback build OK em {temp_dir}')
+"@
+
+    try {
+        Set-Content -LiteralPath $tempBuildScript -Value $scriptContent -Encoding UTF8
+        Invoke-External -CommandParts ($PythonCommand + @($tempBuildScript))
+    }
+    finally {
+        if (Test-Path $tempBuildScript) {
+            Remove-Item -LiteralPath $tempBuildScript -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path $tempDistDir) {
+            Remove-Item -LiteralPath $tempDistDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repoRoot
 
@@ -57,11 +103,16 @@ if ([string]::IsNullOrWhiteSpace($branch)) {
 
 Write-Step "Limpando pasta temporária de validação, se existir"
 if (Test-Path "dist_palette_check") {
-    Remove-Item -LiteralPath "dist_palette_check" -Recurse -Force
+    try {
+        Remove-Item -LiteralPath "dist_palette_check" -Recurse -Force
+    }
+    catch {
+        Write-Host "Aviso: não foi possível remover dist_palette_check agora. Seguindo com a publicação." -ForegroundColor Yellow
+    }
 }
 
 Write-Step "Gerando build estático"
-Invoke-External ($pythonCmd + @("build.py"))
+Invoke-BuildWithFallback -PythonCommand $pythonCmd
 
 Write-Step "Verificando alterações"
 $statusBefore = git status --short
