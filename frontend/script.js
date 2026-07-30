@@ -994,6 +994,7 @@ async function downloadRelatorioPdf() {
     let y = 16;
     const now = new Date();
     const emittedAt = now.toLocaleDateString('pt-BR');
+    let currentSectionTitle = '';
 
     function faixaAccentColor(valor) {
         const colors = {
@@ -1068,58 +1069,92 @@ async function downloadRelatorioPdf() {
         doc.text(`Emitido em ${emittedAt} · Página ${pageNumber}`, pageWidth - marginX - 52, pageHeight - 8);
     }
 
-    function ensureSpace(requiredHeight) {
+    function drawAnoSectionTitle(anoLabel, isContinuation = false) {
+        const title = isContinuation ? `${anoLabel} — CONTINUAÇÃO` : anoLabel;
+        currentSectionTitle = anoLabel;
+        doc.setFillColor(236, 242, 248);
+        doc.roundedRect(marginX, y - 2, contentWidth, 11, 2.5, 2.5, 'F');
+        doc.setDrawColor(91, 125, 177);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(marginX, y - 2, contentWidth, 11, 2.5, 2.5, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(23, 58, 94);
+        doc.text(`ANO ESCOLAR: ${title}`, marginX + 4, y + 5);
+        y += 15;
+    }
+
+    function ensureSpace(requiredHeight, continuationTitle = '') {
         if (y + requiredHeight <= pageHeight - 16) return;
         doc.addPage();
         drawHeader(doc.getNumberOfPages());
+        if (continuationTitle) {
+            drawAnoSectionTitle(continuationTitle, true);
+        }
     }
 
     drawHeader(1);
+    const yearGroups = ano === 'Todos'
+        ? [...new Set(rows.map(row => row.ano_escolar).filter(Boolean))]
+            .sort((a, b) => anoSortKey(a) - anoSortKey(b))
+            .map(anoEscolar => ({ anoEscolar, rows: rows.filter(row => row.ano_escolar === anoEscolar) }))
+        : [{ anoEscolar: ano, rows }];
 
-    rows.forEach((row, idx) => {
-        const descricaoWidth = contentWidth - 12;
-        const metaWidth = contentWidth - 12;
-        const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
-        const meta = [
-            `Ano: ${row.ano_escolar || '-'}`,
-            `Componente: ${row.componente || '-'}`,
-            `Acerto: ${row.acerto_pct}%`,
-            `Faixa: ${row.faixa || '-'}`,
-            `Nível: ${row.nivel_dificuldade || '-'}`
-        ].join('  |  ');
-        const metaLines = doc.splitTextToSize(meta, metaWidth);
-        const blockHeight = 12 + (descricao.length * 5.2) + (metaLines.length * 4.8) + 11;
-        const accent = faixaAccentColor(row.faixa);
+    yearGroups.forEach((group, groupIdx) => {
+        const anoLabel = group.anoEscolar || 'ANO NÃO INFORMADO';
 
-        ensureSpace(blockHeight);
+        if (groupIdx > 0) {
+            doc.addPage();
+            drawHeader(doc.getNumberOfPages());
+        }
 
-        doc.setFillColor(...accent.fill);
-        doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'F');
-        doc.setDrawColor(...accent.border);
-        doc.setLineWidth(0.6);
-        doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'S');
-        doc.setDrawColor(214, 224, 238);
-        doc.setFillColor(23, 58, 94);
-        doc.roundedRect(marginX + 2, y - 1.5, 22, 7, 2, 2, 'F');
+        drawAnoSectionTitle(anoLabel, false);
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(255, 255, 255);
-        doc.text(`${row.habilidade_pos}`, marginX + 5, y + 3);
-        doc.setTextColor(...accent.text);
-        doc.text(`${row.habilidade_descritor}`, marginX + 28, y + 3);
+        group.rows.forEach(row => {
+            const descricaoWidth = contentWidth - 12;
+            const metaWidth = contentWidth - 12;
+            const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
+            const meta = [
+                `Ano: ${row.ano_escolar || '-'}`,
+                `Componente: ${row.componente || '-'}`,
+                `Acerto: ${row.acerto_pct}%`,
+                `Faixa: ${row.faixa || '-'}`,
+                `Nível: ${row.nivel_dificuldade || '-'}`
+            ].join('  |  ');
+            const metaLines = doc.splitTextToSize(meta, metaWidth);
+            const blockHeight = 12 + (descricao.length * 5.2) + (metaLines.length * 4.8) + 11;
+            const accent = faixaAccentColor(row.faixa);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(52, 80, 107);
-        doc.text(descricao, marginX + 4, y + 9, { maxWidth: descricaoWidth });
+            ensureSpace(blockHeight, currentSectionTitle || anoLabel);
 
-        const metaY = y + 9 + (descricao.length * 5.2) + 1.5;
-        doc.setFontSize(8.5);
-        doc.setTextColor(95, 111, 108);
-        doc.text(metaLines, marginX + 4, metaY, { maxWidth: metaWidth });
+            doc.setFillColor(...accent.fill);
+            doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'F');
+            doc.setDrawColor(...accent.border);
+            doc.setLineWidth(0.6);
+            doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'S');
+            doc.setDrawColor(214, 224, 238);
+            doc.setFillColor(23, 58, 94);
+            doc.roundedRect(marginX + 2, y - 1.5, 22, 7, 2, 2, 'F');
 
-        y += blockHeight + 4;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(255, 255, 255);
+            doc.text(`${row.habilidade_pos}`, marginX + 5, y + 3);
+            doc.setTextColor(...accent.text);
+            doc.text(`${row.habilidade_descritor}`, marginX + 28, y + 3);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(52, 80, 107);
+            doc.text(descricao, marginX + 4, y + 9, { maxWidth: descricaoWidth });
+
+            const metaY = y + 9 + (descricao.length * 5.2) + 1.5;
+            doc.setFontSize(8.5);
+            doc.setTextColor(95, 111, 108);
+            doc.text(metaLines, marginX + 4, metaY, { maxWidth: metaWidth });
+
+            y += blockHeight + 4;
+        });
     });
 
     const fileBase = `relatorio_${slugify(escola)}_${slugify(ano === 'Todos' ? 'todos-anos' : ano)}_${slugify(componente === 'Todos' ? 'todos-componentes' : componente)}`;
