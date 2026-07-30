@@ -106,21 +106,61 @@
                 <h2>Habilidades Avaliadas</h2>
                 <p>Clique em um card para ver detalhes da habilidade.</p>
             </div>
-            <div class="hab-grid" id="hab-grid"></div>
+            <div class="hab-layout">
+                <div class="hab-grid-wrap">
+                    <div class="hab-grid" id="hab-grid"></div>
+                </div>
+                <aside class="hab-detail-panel" id="hab-detail-panel">
+                    <div class="hab-detail-empty" id="hab-detail-empty">Selecione uma habilidade para visualizar a descrição e os detalhes.</div>
+                    <div class="hab-detail-content hidden" id="hab-detail-content">
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Código Habilidade CAEd</div>
+                            <div class="hab-detail-value" id="hab-detail-caed"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Código da habilidade</div>
+                            <div class="hab-detail-highlight" id="hab-detail-pos"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Avaliação</div>
+                            <div class="hab-detail-value" id="hab-detail-avaliacao"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Ano escolar</div>
+                            <div class="hab-detail-value" id="hab-detail-ano"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Componente curricular</div>
+                            <div class="hab-detail-value" id="hab-detail-componente"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Escola</div>
+                            <div class="hab-detail-value" id="hab-detail-escola"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Percentual de acerto</div>
+                            <div class="hab-detail-value" id="hab-detail-pct"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Faixa de desempenho</div>
+                            <div class="hab-detail-value" id="hab-detail-faixa"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Nível de dificuldade</div>
+                            <div class="hab-detail-value" id="hab-detail-nivel"></div>
+                        </div>
+                        <div class="hab-detail-section">
+                            <div class="hab-detail-label">Habilidade</div>
+                            <div class="hab-detail-text" id="hab-detail-desc"></div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
             <div class="hab-legenda">
                 <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fca5a5,#f87171);"></span> Crítico (≤ 40%)</span>
                 <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fdba74,#fb923c);"></span> Atenção (41% – 60%)</span>
                 <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#fde68a,#fcd34d);"></span> Intermediário (61% – 80%)</span>
                 <span class="hab-legenda-item"><span class="hab-legenda-cor" style="background:linear-gradient(135deg,#86efac,#4ade80);"></span> Adequado (&gt; 80%)</span>
-            </div>
-            <!-- Modal -->
-            <div id="hab-modal" class="modal-overlay hidden">
-                <div class="modal-box">
-                    <button class="modal-close" id="modal-close">&times;</button>
-                    <h3 id="modal-title"></h3>
-                    <p id="modal-desc"></p>
-                    <div id="modal-details"></div>
-                </div>
             </div>
         </section>
 

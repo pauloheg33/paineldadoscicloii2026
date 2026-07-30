@@ -12,6 +12,7 @@ let habData = [];
 let desData = [];
 let analiseData = null;
 let turmasData = [];
+let habilidadeSelecionadaKey = null;
 
 Chart.register(ChartDataLabels);
 Chart.defaults.plugins.datalabels = { display: false };
@@ -133,9 +134,14 @@ function getHabilidadesCards(escola, ano, componente) {
     for (const [codigo, rows] of Object.entries(groups)) {
         const m = rd(mean(rows.map(r => r.acerto_pct)), 1);
         result.push({
+            avaliacao: rows[0].avaliacao || 'CICLO II 2026',
+            escola: rows[0].escola,
+            ano_escolar: rows[0].ano_escolar,
+            componente: rows[0].componente,
             habilidade_codigo: codigo,
             habilidade_descricao: rows[0].habilidade_descricao,
             habilidade_pos: rows[0].habilidade_pos,
+            habilidade_descritor: rows[0].habilidade_descritor,
             acerto_pct: m,
             nivel_dificuldade: rows[0].nivel_dificuldade,
             faixa: classificarFaixa(m)
@@ -461,20 +467,33 @@ function loadHabilidades() {
     const data = getHabilidadesCards(escola, ano, componente);
     const grid = document.getElementById('hab-grid');
     grid.innerHTML = '';
+    if (!data.length) {
+        habilidadeSelecionadaKey = null;
+        renderHabDetail(null);
+        return;
+    }
+    const currentExists = data.some(h => h.habilidade_codigo === habilidadeSelecionadaKey);
+    if (!currentExists) habilidadeSelecionadaKey = data[0].habilidade_codigo;
     data.forEach(h => {
         const card = document.createElement('div');
         const cls = faixaClass(h.faixa);
         card.className = 'hab-card ' + cls;
+        if (h.habilidade_codigo === habilidadeSelecionadaKey) card.classList.add('active');
         const codigoMatriz = h.habilidade_codigo.replace(/H\s?\d+\s*/, '').replace(/[()]/g, '');
         card.innerHTML = `
             <span class="hab-code">${h.habilidade_pos} - (${codigoMatriz})</span>
             <span class="hab-pct">${h.acerto_pct}%</span>
             <span class="hab-faixa">${h.faixa}</span>
         `;
-        card.addEventListener('click', () => showModal(h));
+        card.addEventListener('click', () => {
+            habilidadeSelecionadaKey = h.habilidade_codigo;
+            renderHabDetail(h);
+            loadHabilidades();
+        });
         grid.appendChild(card);
     });
-    setupModal();
+    const selecionada = data.find(h => h.habilidade_codigo === habilidadeSelecionadaKey) || data[0];
+    renderHabDetail(selecionada);
 }
 
 function faixaClass(faixa) {
@@ -482,31 +501,27 @@ function faixaClass(faixa) {
     return map[faixa] || '';
 }
 
-function showModal(h) {
-    const modal = document.getElementById('hab-modal');
-    document.getElementById('modal-title').textContent = h.habilidade_pos + ' — ' + h.habilidade_codigo;
-    document.getElementById('modal-desc').textContent = h.habilidade_descricao;
-    let leitura = '';
-    if (h.acerto_pct <= 40) leitura = 'Desempenho CRÍTICO. Esta habilidade exige intervenção pedagógica imediata e replanejamento de atividades.';
-    else if (h.acerto_pct <= 60) leitura = 'Desempenho em ATENÇÃO. Necessário reforço direcionado e acompanhamento contínuo.';
-    else if (h.acerto_pct <= 80) leitura = 'Desempenho INTERMEDIÁRIO. Há espaço para consolidação com atividades de aprofundamento.';
-    else leitura = 'Desempenho ADEQUADO. Manter estratégias atuais e utilizar como referência de boas práticas.';
-    document.getElementById('modal-details').innerHTML = `
-        <div class="detail-row"><span class="detail-label">Percentual de Acerto</span><span>${h.acerto_pct}%</span></div>
-        <div class="detail-row"><span class="detail-label">Faixa de Desempenho</span><span>${h.faixa}</span></div>
-        <div class="detail-row"><span class="detail-label">Nível de Dificuldade</span><span>${h.nivel_dificuldade}</span></div>
-        <div style="margin-top:14px; padding:12px; border-radius:8px; background:#f8fafc;">
-            <strong style="color:#0f2b4c;">Leitura Pedagógica:</strong><br/>
-            <span style="color:#475569;">${leitura}</span>
-        </div>
-    `;
-    modal.classList.remove('hidden');
-}
-
-function setupModal() {
-    const modal = document.getElementById('hab-modal');
-    document.getElementById('modal-close').onclick = () => modal.classList.add('hidden');
-    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+function renderHabDetail(h) {
+    const empty = document.getElementById('hab-detail-empty');
+    const content = document.getElementById('hab-detail-content');
+    if (!empty || !content) return;
+    if (!h) {
+        empty.classList.remove('hidden');
+        content.classList.add('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+    content.classList.remove('hidden');
+    document.getElementById('hab-detail-caed').textContent = h.habilidade_descritor || h.habilidade_codigo;
+    document.getElementById('hab-detail-pos').textContent = h.habilidade_pos || '';
+    document.getElementById('hab-detail-avaliacao').textContent = h.avaliacao || 'CICLO II 2026';
+    document.getElementById('hab-detail-ano').textContent = h.ano_escolar || '';
+    document.getElementById('hab-detail-componente').textContent = h.componente || '';
+    document.getElementById('hab-detail-escola').textContent = h.escola || '';
+    document.getElementById('hab-detail-pct').textContent = `${h.acerto_pct}%`;
+    document.getElementById('hab-detail-faixa').textContent = h.faixa || '';
+    document.getElementById('hab-detail-nivel').textContent = h.nivel_dificuldade || '';
+    document.getElementById('hab-detail-desc').textContent = h.habilidade_descricao || '';
 }
 
 // ===== ESCOLAS — ANÁLISE COMPLETA =====
