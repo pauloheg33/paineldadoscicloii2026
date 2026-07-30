@@ -217,6 +217,7 @@ function getTabelaDetalhada(escola, ano, componente) {
 document.addEventListener('DOMContentLoaded', async () => {
     setupSidebar();
     setupNavigation();
+    setupReportActions();
     await loadData();
     loadFilters();
     setupFilterListeners();
@@ -313,7 +314,8 @@ function loadCurrentPage() {
         'visao-geral': loadVisaoGeral,
         'habilidades': loadHabilidades,
         'escolas': loadEscolas,
-        'detalhamento': loadDetalhamento
+        'detalhamento': loadDetalhamento,
+        'relatorios': loadRelatorios
     };
     if (loaders[page]) loaders[page]();
 }
@@ -792,6 +794,181 @@ function loadDetalhamento() {
     });
 }
 
+// ===== RELATÓRIOS =====
+function setupReportActions() {
+    const btn = document.getElementById('btn-download-report');
+    if (!btn) return;
+    btn.addEventListener('click', downloadRelatorioPdf);
+}
+
+function getRelatorioRows(escola, ano, componente) {
+    if (!escola || escola === 'Todas') return [];
+    const rows = filtrarHab(escola, ano, componente).map(r => ({
+        escola: r.escola,
+        ano_escolar: r.ano_escolar,
+        componente: r.componente,
+        habilidade_pos: r.habilidade_pos,
+        habilidade_descritor: r.habilidade_descritor,
+        habilidade_descricao: r.habilidade_descricao,
+        acerto_pct: r.acerto_pct,
+        faixa: r.faixa,
+        nivel_dificuldade: r.nivel_dificuldade
+    }));
+    rows.sort((a, b) =>
+        anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
+        (a.componente || '').localeCompare(b.componente || '') ||
+        (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '')
+    );
+    return rows;
+}
+
+function loadRelatorios() {
+    const { escola, ano, componente } = getFilters();
+    const rows = getRelatorioRows(escola, ano, componente);
+    const summary = document.getElementById('report-summary');
+    const empty = document.getElementById('report-empty');
+    const wrapper = document.getElementById('report-table-wrapper');
+    const tbody = document.getElementById('report-body');
+    const btn = document.getElementById('btn-download-report');
+
+    if (!summary || !empty || !wrapper || !tbody || !btn) return;
+
+    if (!escola || escola === 'Todas') {
+        summary.textContent = 'Escolha uma escola específica nos filtros do topo para montar o relatório.';
+        empty.classList.remove('hidden');
+        wrapper.classList.add('hidden');
+        tbody.innerHTML = '';
+        btn.disabled = true;
+        return;
+    }
+
+    const anos = [...new Set(rows.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
+    const comps = [...new Set(rows.map(r => r.componente).filter(Boolean))];
+    summary.innerHTML = `
+        <strong>${sanitize(escola)}</strong> ·
+        ${rows.length} registro(s) ·
+        ${anos.join(', ') || 'Sem ano'} ·
+        ${comps.join(' / ') || 'Sem componente'}
+    `;
+
+    tbody.innerHTML = '';
+    if (!rows.length) {
+        empty.textContent = 'Não há registros para os filtros selecionados.';
+        empty.classList.remove('hidden');
+        wrapper.classList.add('hidden');
+        btn.disabled = true;
+        return;
+    }
+
+    rows.forEach(row => {
+        const tr = document.createElement('tr');
+        const bcls = badgeClass(row.faixa);
+        tr.innerHTML = `
+            <td>${sanitize(row.ano_escolar)}</td>
+            <td>${sanitize(row.componente)}</td>
+            <td>${sanitize(row.habilidade_pos)}</td>
+            <td>${sanitize(row.habilidade_descritor)}</td>
+            <td title="${sanitize(row.habilidade_descricao)}">${sanitize(row.habilidade_descricao)}</td>
+            <td><strong>${row.acerto_pct}%</strong></td>
+            <td><span class="badge ${bcls}">${sanitize(row.faixa)}</span></td>
+            <td>${sanitize(row.nivel_dificuldade)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    empty.classList.add('hidden');
+    wrapper.classList.remove('hidden');
+    btn.disabled = false;
+}
+
+function downloadRelatorioPdf() {
+    const { escola, ano, componente } = getFilters();
+    const rows = getRelatorioRows(escola, ano, componente);
+    if (!escola || escola === 'Todas' || !rows.length) {
+        alert('Selecione uma escola com dados disponíveis para gerar o PDF.');
+        return;
+    }
+
+    const jsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+    if (!jsPDFCtor) {
+        alert('Biblioteca de PDF não carregada.');
+        return;
+    }
+
+    const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const autoTableFn =
+        (window.jspdfAutoTable && typeof window.jspdfAutoTable.default === 'function' && window.jspdfAutoTable.default) ||
+        (typeof window.autoTable === 'function' && window.autoTable) ||
+        (doc && typeof doc.autoTable === 'function' ? (pdf, opts) => pdf.autoTable(opts) : null);
+
+    if (!autoTableFn) {
+        alert('Plugin de tabela PDF não carregado.');
+        return;
+    }
+
+    const filtrosTxt = [
+        `Escola: ${escola}`,
+        `Ano: ${ano === 'Todos' ? 'Todos' : ano}`,
+        `Componente: ${componente === 'Todos' ? 'Todos' : componente}`
+    ];
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Relatório de Habilidades por Escola', 14, 16);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    filtrosTxt.forEach((linha, idx) => doc.text(linha, 14, 24 + (idx * 5)));
+    doc.text(`Total de registros: ${rows.length}`, 14, 39);
+
+    const body = rows.map(row => [
+        row.ano_escolar,
+        row.componente,
+        row.habilidade_pos,
+        row.habilidade_descritor,
+        row.habilidade_descricao,
+        `${row.acerto_pct}%`,
+        row.faixa,
+        row.nivel_dificuldade
+    ]);
+
+    autoTableFn(doc, {
+        startY: 44,
+        head: [[
+            'Ano', 'Componente', 'Habilidade', 'Código', 'Descrição', 'Acerto %', 'Faixa', 'Nível'
+        ]],
+        body,
+        styles: {
+            font: 'helvetica',
+            fontSize: 8,
+            cellPadding: 2,
+            lineColor: [226, 232, 240],
+            lineWidth: 0.1
+        },
+        headStyles: {
+            fillColor: [23, 50, 77],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+            0: { cellWidth: 16 },
+            1: { cellWidth: 28 },
+            2: { cellWidth: 18 },
+            3: { cellWidth: 20 },
+            4: { cellWidth: 62 },
+            5: { cellWidth: 16, halign: 'right' },
+            6: { cellWidth: 18 },
+            7: { cellWidth: 16 }
+        },
+        margin: { left: 10, right: 10 }
+    });
+
+    const fileBase = `relatorio_${slugify(escola)}_${slugify(ano === 'Todos' ? 'todos-anos' : ano)}_${slugify(componente === 'Todos' ? 'todos-componentes' : componente)}`;
+    doc.save(`${fileBase}.pdf`);
+}
+
 function badgeClass(faixa) {
     const map = { 'Crítico': 'badge-critico', 'Atenção': 'badge-atencao', 'Intermediário': 'badge-intermediario', 'Regular': 'badge-intermediario', 'Adequado': 'badge-adequado' };
     return map[faixa] || '';
@@ -929,6 +1106,15 @@ function renderHorizontalBar(id, labels, values, descricoes, isLow) {
 function truncate(str, max) {
     if (!str) return '';
     return str.length > max ? str.substring(0, max) + '…' : str;
+}
+
+function slugify(str) {
+    return String(str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase();
 }
 
 function sanitize(str) {

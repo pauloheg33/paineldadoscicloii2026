@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- SIDEBAR -->
@@ -39,6 +41,10 @@
             <li class="nav-item" data-page="detalhamento">
                 <span class="material-icons-round">table_chart</span>
                 <span class="nav-label">Detalhamento</span>
+            </li>
+            <li class="nav-item" data-page="relatorios">
+                <span class="material-icons-round">description</span>
+                <span class="nav-label">Relatórios</span>
             </li>
         </ul>
         <div class="sidebar-footer">
@@ -225,6 +231,48 @@
                     </thead>
                     <tbody id="tabela-body"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- PAGE: RELATÓRIOS -->
+        <section id="page-relatorios" class="page">
+            <div class="section-header">
+                <h2>Relatórios por Escola</h2>
+                <p>Selecione uma escola nos filtros do topo para visualizar e baixar o relatório completo em PDF.</p>
+            </div>
+
+            <div class="card">
+                <div class="report-toolbar">
+                    <div class="report-summary" id="report-summary">
+                        Escolha uma escola para gerar o relatório.
+                    </div>
+                    <div class="report-actions">
+                        <button id="btn-download-report" class="btn-primary" type="button" disabled>
+                            <span class="material-icons-round">picture_as_pdf</span>
+                            <span>Baixar PDF</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="report-empty" id="report-empty">
+                    Selecione uma escola específica para exibir as habilidades com descrição e percentual de acerto.
+                </div>
+                <div class="table-wrapper hidden" id="report-table-wrapper">
+                    <table id="tabela-relatorio">
+                        <thead>
+                            <tr>
+                                <th>Ano</th>
+                                <th>Componente</th>
+                                <th>Habilidade</th>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Acerto %</th>
+                                <th>Faixa</th>
+                                <th>Nível</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-body"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </main>

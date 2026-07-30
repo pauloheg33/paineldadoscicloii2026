@@ -261,6 +261,70 @@ body { display:flex; }
 .badge-intermediario { background:#FDE68A; color:#92400E; }
 .badge-adequado { background:#DCFCE7; color:#15803D; }
 
+/* ===== RELATÓRIOS ===== */
+.report-toolbar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    margin-bottom:14px;
+}
+.report-summary {
+    font-size:13px;
+    color:#34506B;
+    line-height:1.45;
+}
+.report-actions {
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+}
+.btn-primary {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:none;
+    border-radius:8px;
+    padding:10px 14px;
+    background:#173A5E;
+    color:#fff;
+    font:inherit;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(23,58,94,.16);
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.btn-primary:hover:not(:disabled) {
+    transform:translateY(-1px);
+    box-shadow:0 8px 18px rgba(23,58,94,.2);
+}
+.btn-primary:disabled {
+    opacity:.45;
+    cursor:not-allowed;
+    box-shadow:none;
+}
+.report-empty {
+    border:1px dashed #CBD5E1;
+    border-radius:10px;
+    padding:18px 20px;
+    color:#667A90;
+    background:#F8FBFF;
+    font-size:13px;
+    line-height:1.5;
+}
+.hidden { display:none !important; }
+#tabela-relatorio { width:100%; border-collapse:collapse; font-size:12px; }
+#tabela-relatorio thead { position:sticky; top:0; z-index:2; }
+#tabela-relatorio th {
+    background:#17324D; color:#fff; font-weight:600; text-align:left;
+    padding:10px 12px; white-space:nowrap;
+}
+#tabela-relatorio td { padding:8px 12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+#tabela-relatorio tbody tr:hover { background:#EEF4FF; }
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width:6px; height:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -280,6 +344,8 @@ body { display:flex; }
     .sidebar { width:62px; min-width:62px; }
     .sidebar .nav-label, .sidebar .sidebar-title, .sidebar .sidebar-footer .nav-label { display:none; }
     .top-header { flex-direction:column; align-items:flex-start; gap:8px; }
+    .report-toolbar { flex-direction:column; align-items:flex-start; }
+    .report-actions { width:100%; justify-content:flex-start; }
 }
 
 /* ===== LOADING ===== */
