@@ -100,6 +100,32 @@ def classificar_status(pct):
     return "Adequado"
 
 
+def calcular_habilidades_criticas_por_escola_ano(df_habilidades):
+    base = df_habilidades.dropna(
+        subset=["escola", "ano_escolar", "habilidade_codigo", "acerto_pct"]
+    ).copy()
+    if base.empty:
+        return {}
+
+    crit_por_habilidade = (
+        base.groupby(["escola", "ano_escolar", "habilidade_codigo"], dropna=True)["acerto_pct"]
+        .mean()
+        .reset_index()
+    )
+    crit_por_habilidade = crit_por_habilidade[
+        crit_por_habilidade["acerto_pct"] <= 40
+    ]
+    crit_por_habilidade["hab_criticas"] = 1
+
+    crit_map = (
+        crit_por_habilidade.groupby(["escola", "ano_escolar"], dropna=True)["hab_criticas"]
+        .sum()
+        .astype(int)
+        .to_dict()
+    )
+    return crit_map
+
+
 def build():
     mapa_escolas = construir_mapa_escolas()
 
@@ -137,6 +163,7 @@ def build():
         .fillna(df["habilidade_codigo"])
     )
     df["faixa"] = df["acerto_pct"].apply(classificar_faixa)
+    hab_criticas_map = calcular_habilidades_criticas_por_escola_ano(df)
 
     hab_cols = [
         "escola", "ano_escolar", "componente", "habilidade_codigo",
@@ -169,28 +196,64 @@ def build():
         "escola", "ano_escolar", "lp_pct", "mt_pct", "media_geral",
         "gap_lp_mat", "vs_rede", "media_escola", "classificacao", "hab_criticas"
     ]
-    df3["escola"] = df3["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
-    rede_mask = df3["escola"].str.startswith("Média")
-    rede_row = df3[rede_mask].iloc[0] if rede_mask.any() else None
+    rede_mask = df3["escola"].astype(str).str.startswith("Média")
+    rede_row = df3[rede_mask].iloc[0].copy() if rede_mask.any() else None
     df3 = df3[~rede_mask].copy()
+    df3["escola"] = df3["escola"].apply(lambda v: normalizar_nome_escola(v, mapa_escolas))
+
     for col in ["lp_pct", "mt_pct", "media_geral", "gap_lp_mat", "vs_rede", "media_escola", "hab_criticas"]:
         df3[col] = pd.to_numeric(df3[col], errors="coerce")
+        if rede_row is not None:
+            rede_row[col] = pd.to_numeric(pd.Series([rede_row[col]]), errors="coerce").iloc[0]
+
     for col in ["lp_pct", "mt_pct", "media_geral", "gap_lp_mat", "vs_rede", "media_escola"]:
         df3[col] = escalar_percentual_serie(df3[col]).round(1)
-    df3["hab_criticas"] = df3["hab_criticas"].round(0)
-    df3["classificacao"] = df3["classificacao"].astype(str).str.strip()
+        if rede_row is not None:
+            rede_row[col] = round(float(escalar_percentual_serie(pd.Series([rede_row[col]])).iloc[0]), 1) if pd.notna(rede_row[col]) else None
+
     df3["ano_escolar"] = df3["ano_escolar"].apply(normalizar_ano_label)
+    df3["media_geral"] = df3["media_geral"].fillna(((df3["lp_pct"] + df3["mt_pct"]) / 2).round(1))
+    df3["gap_lp_mat"] = df3["gap_lp_mat"].fillna((df3["lp_pct"] - df3["mt_pct"]).round(1))
+
+    if rede_row is not None:
+        rede_lp = rede_row["lp_pct"]
+        rede_mt = rede_row["mt_pct"]
+        rede_media = rede_row["media_geral"]
+        if pd.isna(rede_media) and pd.notna(rede_lp) and pd.notna(rede_mt):
+            rede_media = round((rede_lp + rede_mt) / 2, 1)
+        rede_analise = {
+            "lp": round(float(rede_lp), 1) if pd.notna(rede_lp) else round(float(df3["lp_pct"].mean()), 1),
+            "mt": round(float(rede_mt), 1) if pd.notna(rede_mt) else round(float(df3["mt_pct"].mean()), 1),
+            "media": round(float(rede_media), 1) if pd.notna(rede_media) else round(float(df3["media_geral"].mean()), 1),
+        }
+    else:
+        rede_analise = {
+            "lp": round(float(df3["lp_pct"].mean()), 1),
+            "mt": round(float(df3["mt_pct"].mean()), 1),
+            "media": round(float(df3["media_geral"].mean()), 1),
+        }
+
+    df3["vs_rede"] = df3["vs_rede"].fillna((df3["media_geral"] - rede_analise["media"]).round(1))
+    media_escola_calc = df3.groupby("escola")["media_geral"].transform("mean").round(1)
+    df3["media_escola"] = df3["media_escola"].fillna(media_escola_calc)
+    df3["classificacao"] = (
+        df3["classificacao"]
+        .astype(str)
+        .str.strip()
+        .replace({"": None, "nan": None, "None": None})
+    )
+    df3["classificacao"] = df3["classificacao"].where(
+        df3["classificacao"].notna(),
+        df3["media_geral"].apply(classificar_status)
+    )
+    df3["hab_criticas"] = df3.apply(
+        lambda row: hab_criticas_map.get((row["escola"], row["ano_escolar"]), 0),
+        axis=1
+    )
     df3 = df3.dropna(subset=["escola", "media_geral"])
+    df3["hab_criticas"] = df3["hab_criticas"].fillna(0).astype(int)
     df3["ano_sort"] = df3["ano_escolar"].apply(extrair_ano_ordenavel)
     df3 = df3.sort_values(["escola", "ano_sort"]).drop(columns=["ano_sort"])
-
-    rede_analise = {}
-    if rede_row is not None:
-        rede_analise = {
-            "lp": round(float(escalar_percentual_serie(pd.Series([rede_row["lp_pct"]])).iloc[0]), 1),
-            "mt": round(float(escalar_percentual_serie(pd.Series([rede_row["mt_pct"]])).iloc[0]), 1),
-            "media": round(float(escalar_percentual_serie(pd.Series([rede_row["media_geral"]])).iloc[0]), 1),
-        }
 
     escola_agg = df3.groupby("escola").agg(
         media=("media_escola", "first"),
