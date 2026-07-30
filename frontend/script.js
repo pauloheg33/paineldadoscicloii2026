@@ -645,6 +645,7 @@ function renderEscolasCriticas(escolas) {
     const labels = sorted.map(e => truncate(e.escola, 24));
     const values = sorted.map(e => e.hab_criticas || 0);
     const maxVal = Math.max(...values, 1);
+    const xMax = Math.max(5, Math.ceil((maxVal + Math.max(2, maxVal * 0.12)) / 5) * 5);
 
     charts['chart-esc-criticas'] = new Chart(el.getContext('2d'), {
         type: 'bar',
@@ -662,24 +663,36 @@ function renderEscolasCriticas(escolas) {
                     return r > 0.7 ? '#EF4444' : r > 0.5 ? '#F59E0B' : r > 0.3 ? '#F59E0B' : '#22C55E';
                 }),
                 borderWidth: 1.5,
-                borderRadius: 4
+                borderRadius: 4,
+                maxBarThickness: 22,
+                categoryPercentage: 0.72,
+                barPercentage: 0.86,
+                clip: false
             }]
         },
         options: {
             indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
+            layout: {
+                padding: { right: 18 }
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { label: c => c.raw + ' habilidade(s) crítica(s)' } },
                 datalabels: {
-                    display: true, anchor: 'end', align: 'end', offset: 2,
+                    display: true, anchor: 'end', align: 'right', offset: 4, clamp: true, clip: false,
                     font: { size: 10, weight: '700' }, color: '#17324D',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     formatter: v => v
                 }
             },
             scales: {
-                x: { min: 0, ticks: { stepSize: 10 } },
+                x: {
+                    min: 0,
+                    max: xMax,
+                    grace: '8%',
+                    ticks: { stepSize: xMax <= 10 ? 2 : 10 }
+                },
                 y: { ticks: { font: { size: 9 } } }
             }
         }
