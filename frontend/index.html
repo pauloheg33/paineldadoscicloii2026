@@ -243,8 +243,31 @@
 
             <div class="card">
                 <div class="report-toolbar">
-                    <div class="report-summary" id="report-summary">
-                        Escolha uma escola para gerar o relatório.
+                    <div class="report-toolbar-main">
+                        <div class="report-summary" id="report-summary">
+                            Escolha uma escola para gerar o relatório.
+                        </div>
+                        <div class="report-subfilters">
+                            <div class="filter-group report-filter-group">
+                                <label for="report-filter-faixa">Faixa</label>
+                                <select id="report-filter-faixa">
+                                    <option value="Todas">Todas</option>
+                                    <option value="Crítico">Crítico</option>
+                                    <option value="Atenção">Atenção</option>
+                                    <option value="Intermediário">Intermediário</option>
+                                    <option value="Adequado">Adequado</option>
+                                    <option value="Crítico + Intermediário">Crítico + Intermediário</option>
+                                </select>
+                            </div>
+                            <div class="filter-group report-filter-group">
+                                <label for="report-sort-order">Ordenação</label>
+                                <select id="report-sort-order">
+                                    <option value="acerto_desc">Percentual de acerto (decrescente)</option>
+                                    <option value="acerto_asc">Percentual de acerto (crescente)</option>
+                                    <option value="codigo_asc">Código da habilidade</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="report-actions">
                         <button id="btn-download-report" class="btn-primary" type="button" disabled>

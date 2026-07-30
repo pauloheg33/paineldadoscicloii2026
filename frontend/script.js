@@ -797,13 +797,49 @@ function loadDetalhamento() {
 // ===== RELATÓRIOS =====
 function setupReportActions() {
     const btn = document.getElementById('btn-download-report');
-    if (!btn) return;
+    const faixaSel = document.getElementById('report-filter-faixa');
+    const sortSel = document.getElementById('report-sort-order');
+    if (!btn || !faixaSel || !sortSel) return;
     btn.addEventListener('click', downloadRelatorioPdf);
+    [faixaSel, sortSel].forEach(el => {
+        el.addEventListener('change', () => {
+            if (getCurrentPage() === 'relatorios') loadRelatorios();
+        });
+    });
 }
 
-function getRelatorioRows(escola, ano, componente) {
+function getReportLocalFilters() {
+    return {
+        faixa: document.getElementById('report-filter-faixa')?.value || 'Todas',
+        ordenacao: document.getElementById('report-sort-order')?.value || 'acerto_desc'
+    };
+}
+
+function compareRelatorioRows(a, b, ordenacao) {
+    if (ordenacao === 'acerto_asc' && a.acerto_pct !== b.acerto_pct) {
+        return a.acerto_pct - b.acerto_pct;
+    }
+    if (ordenacao === 'codigo_asc') {
+        return (
+            (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '') ||
+            anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
+            (a.componente || '').localeCompare(b.componente || '') ||
+            b.acerto_pct - a.acerto_pct
+        );
+    }
+    if (a.acerto_pct !== b.acerto_pct) {
+        return b.acerto_pct - a.acerto_pct;
+    }
+    return (
+        anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
+        (a.componente || '').localeCompare(b.componente || '') ||
+        (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '')
+    );
+}
+
+function getRelatorioRows(escola, ano, componente, faixa = 'Todas', ordenacao = 'acerto_desc') {
     if (!escola || escola === 'Todas') return [];
-    const rows = filtrarHab(escola, ano, componente).map(r => ({
+    let rows = filtrarHab(escola, ano, componente).map(r => ({
         escola: r.escola,
         ano_escolar: r.ano_escolar,
         componente: r.componente,
@@ -814,17 +850,19 @@ function getRelatorioRows(escola, ano, componente) {
         faixa: r.faixa,
         nivel_dificuldade: r.nivel_dificuldade
     }));
-    rows.sort((a, b) =>
-        anoSortKey(a.ano_escolar) - anoSortKey(b.ano_escolar) ||
-        (a.componente || '').localeCompare(b.componente || '') ||
-        (a.habilidade_pos || '').localeCompare(b.habilidade_pos || '')
-    );
+    if (faixa === 'Crítico + Intermediário') {
+        rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Intermediário');
+    } else if (faixa && faixa !== 'Todas') {
+        rows = rows.filter(r => r.faixa === faixa);
+    }
+    rows.sort((a, b) => compareRelatorioRows(a, b, ordenacao));
     return rows;
 }
 
 function loadRelatorios() {
     const { escola, ano, componente } = getFilters();
-    const rows = getRelatorioRows(escola, ano, componente);
+    const { faixa, ordenacao } = getReportLocalFilters();
+    const rows = getRelatorioRows(escola, ano, componente, faixa, ordenacao);
     const summary = document.getElementById('report-summary');
     const empty = document.getElementById('report-empty');
     const wrapper = document.getElementById('report-table-wrapper');
@@ -844,11 +882,18 @@ function loadRelatorios() {
 
     const anos = [...new Set(rows.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const comps = [...new Set(rows.map(r => r.componente).filter(Boolean))];
+    const ordenacaoLabel = {
+        acerto_desc: 'Percentual de acerto (decrescente)',
+        acerto_asc: 'Percentual de acerto (crescente)',
+        codigo_asc: 'Código da habilidade'
+    }[ordenacao] || 'Percentual de acerto (decrescente)';
     summary.innerHTML = `
         <strong>${sanitize(escola)}</strong> ·
-        ${rows.length} registro(s) ·
-        ${anos.join(', ') || 'Sem ano'} ·
-        ${comps.join(' / ') || 'Sem componente'}
+        ${rows.length} habilidade(s) ·
+        Ano: ${sanitize(anos.join(', ') || (ano === 'Todos' ? 'Todos' : ano))} ·
+        Componente: ${sanitize(comps.join(' / ') || (componente === 'Todos' ? 'Todos' : componente))} ·
+        Faixa: ${sanitize(faixa)} ·
+        Ordem: ${sanitize(ordenacaoLabel)}
     `;
 
     tbody.innerHTML = '';
@@ -866,10 +911,10 @@ function loadRelatorios() {
         tr.innerHTML = `
             <td>${sanitize(row.ano_escolar)}</td>
             <td>${sanitize(row.componente)}</td>
-            <td>${sanitize(row.habilidade_pos)}</td>
-            <td>${sanitize(row.habilidade_descritor)}</td>
-            <td title="${sanitize(row.habilidade_descricao)}">${sanitize(row.habilidade_descricao)}</td>
-            <td><strong>${row.acerto_pct}%</strong></td>
+            <td class="report-cell-code">${sanitize(row.habilidade_pos)}</td>
+            <td class="report-cell-code">${sanitize(row.habilidade_descritor)}</td>
+            <td class="report-cell-desc" title="${sanitize(row.habilidade_descricao)}">${sanitize(row.habilidade_descricao)}</td>
+            <td><span class="report-cell-pct">${row.acerto_pct}%</span></td>
             <td><span class="badge ${bcls}">${sanitize(row.faixa)}</span></td>
             <td>${sanitize(row.nivel_dificuldade)}</td>
         `;
@@ -883,7 +928,8 @@ function loadRelatorios() {
 
 function downloadRelatorioPdf() {
     const { escola, ano, componente } = getFilters();
-    const rows = getRelatorioRows(escola, ano, componente);
+    const { faixa, ordenacao } = getReportLocalFilters();
+    const rows = getRelatorioRows(escola, ano, componente, faixa, ordenacao);
     if (!escola || escola === 'Todas' || !rows.length) {
         alert('Selecione uma escola com dados disponíveis para gerar o PDF.');
         return;
@@ -900,7 +946,13 @@ function downloadRelatorioPdf() {
     const filtrosTxt = [
         `Escola: ${escola}`,
         `Ano: ${ano === 'Todos' ? 'Todos' : ano}`,
-        `Componente: ${componente === 'Todos' ? 'Todos' : componente}`
+        `Componente: ${componente === 'Todos' ? 'Todos' : componente}`,
+        `Faixa: ${faixa}`,
+        `Ordenação: ${({
+            acerto_desc: 'Percentual de acerto (decrescente)',
+            acerto_asc: 'Percentual de acerto (crescente)',
+            codigo_asc: 'Código da habilidade'
+        }[ordenacao] || 'Percentual de acerto (decrescente)')}`
     ];
 
     const marginX = 14;
@@ -908,26 +960,66 @@ function downloadRelatorioPdf() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const contentWidth = pageWidth - (marginX * 2);
     let y = 16;
+    const now = new Date();
+    const emittedAt = now.toLocaleDateString('pt-BR');
+
+    function faixaAccentColor(valor) {
+        const colors = {
+            'Crítico': { fill: [254, 226, 226], border: [239, 68, 68], text: [185, 28, 28] },
+            'Atenção': { fill: [254, 243, 199], border: [245, 158, 11], text: [180, 83, 9] },
+            'Intermediário': { fill: [253, 230, 138], border: [245, 158, 11], text: [146, 64, 14] },
+            'Adequado': { fill: [220, 252, 231], border: [34, 197, 94], text: [21, 128, 61] }
+        };
+        return colors[valor] || { fill: [248, 250, 252], border: [214, 224, 238], text: [52, 80, 107] };
+    }
 
     function drawHeader(pageNumber) {
+        doc.setFillColor(23, 58, 94);
+        doc.rect(0, 0, pageWidth, 28, 'F');
+        doc.setFillColor(36, 80, 122);
+        doc.rect(0, 28, pageWidth, 10, 'F');
+
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.setTextColor(23, 50, 77);
-        doc.text('Relatório de Habilidades por Escola', marginX, 16);
+        doc.setFontSize(18);
+        doc.setTextColor(255, 255, 255);
+        doc.text('SADE', marginX, 14);
+
+        doc.setFontSize(13);
+        doc.text('Relatório de Habilidades por Escola', marginX, 24);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(52, 80, 107);
-        filtrosTxt.forEach((linha, idx) => doc.text(linha, marginX, 24 + (idx * 5)));
-        doc.text(`Total de registros: ${rows.length}`, marginX, 39);
+        doc.setFontSize(9.5);
+        doc.text('Painel de Resultados — CICLO II 2026', marginX, 34);
+
+        doc.setTextColor(23, 50, 77);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'F');
+        doc.setDrawColor(214, 224, 238);
+        doc.roundedRect(marginX, 45, contentWidth, 28, 4, 4, 'S');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.text('Coordenadoria de Formação, Estatística e Avaliação Educacional · Município de Ararendá', marginX + 4, 52);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.7);
+        filtrosTxt.forEach((linha, idx) => {
+            const col = idx < 3 ? 0 : 1;
+            const row = idx % 3;
+            const x = marginX + 4 + (col * (contentWidth / 2));
+            const yy = 58 + (row * 4.6);
+            doc.text(linha, x, yy);
+        });
+        doc.text(`Total de habilidades: ${rows.length}`, marginX + 4, 71);
 
         doc.setDrawColor(214, 224, 238);
-        doc.line(marginX, 43, pageWidth - marginX, 43);
+        doc.line(marginX, 78, pageWidth - marginX, 78);
 
         doc.setFontSize(9);
         doc.setTextColor(124, 140, 165);
-        doc.text(`CICLO II 2026 · ${escola} · Página ${pageNumber}`, marginX, pageHeight - 8);
-        y = 50;
+        doc.text(`Painel de Resultados — CICLO II 2026 · ${escola}`, marginX, pageHeight - 8);
+        doc.text(`Emitido em ${emittedAt} · Página ${pageNumber}`, pageWidth - marginX - 52, pageHeight - 8);
+        y = 86;
     }
 
     function ensureSpace(requiredHeight) {
@@ -949,16 +1041,25 @@ function downloadRelatorioPdf() {
         ].join('  |  ');
         const metaLines = doc.splitTextToSize(meta, contentWidth - 4);
         const blockHeight = 12 + (descricao.length * 5) + (metaLines.length * 4.5) + 10;
+        const accent = faixaAccentColor(row.faixa);
 
         ensureSpace(blockHeight);
 
-        doc.setFillColor(248, 250, 252);
+        doc.setFillColor(...accent.fill);
         doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'F');
+        doc.setDrawColor(...accent.border);
+        doc.setLineWidth(0.6);
+        doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'S');
+        doc.setDrawColor(214, 224, 238);
+        doc.setFillColor(23, 58, 94);
+        doc.roundedRect(marginX + 2, y - 1.5, 22, 7, 2, 2, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.setTextColor(23, 50, 77);
-        doc.text(`${row.habilidade_pos} (${row.habilidade_descritor})`, marginX + 3, y + 2);
+        doc.setTextColor(255, 255, 255);
+        doc.text(`${row.habilidade_pos}`, marginX + 5, y + 3);
+        doc.setTextColor(...accent.text);
+        doc.text(`${row.habilidade_descritor}`, marginX + 28, y + 3);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
