@@ -13,16 +13,19 @@ DATA_DIR = ROOT / "backend" / "data"
 FRONTEND_DIR = ROOT / "frontend"
 DIST_DIR = ROOT / "dist"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
+FAIXA_CRITICO_MAX = 46.37
+FAIXA_ATENCAO_MAX = 60
+FAIXA_INTERMEDIARIO_MAX = 80
 
 
 def classificar_faixa(pct):
     if pd.isna(pct):
         return "Sem dados"
-    if pct <= 40:
+    if pct <= FAIXA_CRITICO_MAX:
         return "Crítico"
-    elif pct <= 60:
+    elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= 80:
+    elif pct <= FAIXA_INTERMEDIARIO_MAX:
         return "Intermediário"
     else:
         return "Adequado"
@@ -91,11 +94,11 @@ def construir_mapa_escolas():
 def classificar_status(pct):
     if pd.isna(pct):
         return "Sem dados"
-    if pct <= 40:
+    if pct <= FAIXA_CRITICO_MAX:
         return "Crítico"
-    elif pct <= 60:
+    elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= 80:
+    elif pct <= FAIXA_INTERMEDIARIO_MAX:
         return "Regular"
     return "Adequado"
 
@@ -113,7 +116,7 @@ def calcular_habilidades_criticas_por_escola_ano(df_habilidades):
         .reset_index()
     )
     crit_por_habilidade = crit_por_habilidade[
-        crit_por_habilidade["acerto_pct"] <= 40
+        crit_por_habilidade["acerto_pct"] <= FAIXA_CRITICO_MAX
     ]
     crit_por_habilidade["hab_criticas"] = 1
 

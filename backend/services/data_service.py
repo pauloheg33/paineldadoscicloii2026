@@ -5,6 +5,9 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
+FAIXA_CRITICO_MAX = 46.37
+FAIXA_ATENCAO_MAX = 60
+FAIXA_INTERMEDIARIO_MAX = 80
 
 
 def normalizar_ano_label(valor):
@@ -107,11 +110,11 @@ def ano_sort_key(valor):
 def classificar_faixa(pct):
     if pd.isna(pct):
         return "Sem dados"
-    if pct <= 40:
+    if pct <= FAIXA_CRITICO_MAX:
         return "Crítico"
-    elif pct <= 60:
+    elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= 80:
+    elif pct <= FAIXA_INTERMEDIARIO_MAX:
         return "Intermediário"
     else:
         return "Adequado"
@@ -174,7 +177,7 @@ def get_indicadores(escola=None, ano=None, componente=None):
 
     # Conta habilidades críticas/adequadas por escola (sem suavizar pela média geral)
     hab_escola = df.groupby(["escola", "habilidade_codigo"])["acerto_pct"].mean()
-    criticas = int(hab_escola[hab_escola <= 40].reset_index()["habilidade_codigo"].nunique())
+    criticas = int(hab_escola[hab_escola <= FAIXA_CRITICO_MAX].reset_index()["habilidade_codigo"].nunique())
     adequadas = int(hab_escola[hab_escola > 80].reset_index()["habilidade_codigo"].nunique())
 
     # Calcula LP e MT a partir dos dados de habilidades (sem depender do filtro de componente)
@@ -303,15 +306,15 @@ def get_insights(escola=None, ano=None, componente=None):
     insights.append(f"A habilidade {pior['codigo']} ({pior['descricao'][:80]}) apresenta o menor desempenho da seleção: {pior['media']}%. Requer atenção prioritária.")
     insights.append(f"A habilidade {melhor['codigo']} ({melhor['descricao'][:80]}) apresenta o melhor desempenho: {melhor['media']}%.")
 
-    criticas = hab_media[hab_media["media"] <= 40]
+    criticas = hab_media[hab_media["media"] <= FAIXA_CRITICO_MAX]
     if len(criticas) > 0:
-        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤40%): {', '.join(criticas['codigo'].tolist())}.")
+        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤46,37%): {', '.join(criticas['codigo'].tolist())}.")
     else:
-        insights.append("Nenhuma habilidade está em nível crítico (≤40%). Bom indicador geral.")
+        insights.append("Nenhuma habilidade está em nível crítico (≤46,37%). Bom indicador geral.")
 
-    atencao = hab_media[(hab_media["media"] > 40) & (hab_media["media"] <= 60)]
+    atencao = hab_media[(hab_media["media"] > FAIXA_CRITICO_MAX) & (hab_media["media"] <= FAIXA_ATENCAO_MAX)]
     if len(atencao) > 0:
-        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (41%-60%): {', '.join(atencao['codigo'].tolist())}.")
+        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (46,38%-60%): {', '.join(atencao['codigo'].tolist())}.")
 
     lp_media = df[df["componente"] == "Língua Portuguesa"]["acerto_pct"].mean()
     mt_media = df[df["componente"] == "Matemática"]["acerto_pct"].mean()
@@ -330,7 +333,7 @@ def get_insights(escola=None, ano=None, componente=None):
         insights.append(f"A escola com melhor desempenho médio é {melhor_escola} ({escola_agg[melhor_escola]}%).")
         insights.append(f"A escola com menor desempenho médio é {pior_escola} ({escola_agg[pior_escola]}%). Recomenda-se intervenção pedagógica direcionada.")
 
-    esc_criticas = df.groupby("escola").apply(lambda g: (g.groupby("habilidade_pos")["acerto_pct"].mean() <= 40).sum())
+    esc_criticas = df.groupby("escola").apply(lambda g: (g.groupby("habilidade_pos")["acerto_pct"].mean() <= FAIXA_CRITICO_MAX).sum())
     if esc_criticas.max() > 0:
         escola_mais_critica = esc_criticas.idxmax()
         insights.append(f"A escola {escola_mais_critica} concentra o maior número de habilidades críticas ({esc_criticas.max()}).")

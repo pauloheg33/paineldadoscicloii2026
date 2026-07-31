@@ -6,6 +6,9 @@ const FAIXA_COLORS = {
     'Regular': { bg: '#FDE68A', border: '#F59E0B', text: '#92400E' },
     'Adequado': { bg: '#DCFCE7', border: '#22C55E', text: '#15803D' }
 };
+const FAIXA_CRITICO_MAX = 46.37;
+const FAIXA_ATENCAO_MAX = 60;
+const FAIXA_INTERMEDIARIO_MAX = 80;
 
 let charts = {};
 let habData = [];
@@ -30,17 +33,17 @@ function rd(val, d) {
 
 function classificarFaixa(pct) {
     if (pct == null || isNaN(pct)) return 'Sem dados';
-    if (pct <= 40) return 'Crítico';
-    if (pct <= 60) return 'Atenção';
-    if (pct <= 80) return 'Intermediário';
+    if (pct <= FAIXA_CRITICO_MAX) return 'Crítico';
+    if (pct <= FAIXA_ATENCAO_MAX) return 'Atenção';
+    if (pct <= FAIXA_INTERMEDIARIO_MAX) return 'Intermediário';
     return 'Adequado';
 }
 
 function classificarStatusTurma(pct) {
     if (pct == null || isNaN(pct)) return 'Sem dados';
-    if (pct <= 40) return 'Crítico';
-    if (pct <= 60) return 'Atenção';
-    if (pct <= 80) return 'Regular';
+    if (pct <= FAIXA_CRITICO_MAX) return 'Crítico';
+    if (pct <= FAIXA_ATENCAO_MAX) return 'Atenção';
+    if (pct <= FAIXA_INTERMEDIARIO_MAX) return 'Regular';
     return 'Adequado';
 }
 
@@ -101,7 +104,7 @@ function getIndicadores(escola, ano, componente) {
     for (const [key, rows] of Object.entries(byEH)) {
         const code = key.split('\x00')[1];
         const m = mean(rows.map(r => r.acerto_pct));
-        if (m <= 40) criticosSet.add(code);
+        if (m <= FAIXA_CRITICO_MAX) criticosSet.add(code);
         if (m > 80) adequadosSet.add(code);
     }
     let dfAll = habData;
@@ -343,7 +346,7 @@ function renderKPIs(ind) {
         { label: 'Língua Portuguesa', value: ind.media_lp + '%', cls: 'purple', sub: 'média LP' },
         { label: 'Matemática', value: ind.media_mt + '%', cls: 'purple', sub: 'média MT' },
         { label: 'Habilidades', value: ind.total_habilidades, cls: '', sub: 'avaliadas' },
-        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 40%' },
+        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 46,37%' },
         { label: 'Adequadas', value: ind.habilidades_adequadas, cls: 'green', sub: '> 80%' },
         { label: 'Melhor', value: ind.melhor_desempenho + '%', cls: 'green', sub: 'habilidade' },
         { label: 'Pior', value: ind.pior_desempenho + '%', cls: 'red', sub: 'habilidade' },
@@ -1195,9 +1198,9 @@ function destroyChart(id) {
 function getBarColors(values, faixas) {
     if (faixas) return faixas.map(f => FAIXA_COLORS[f]?.border || '#667A90');
     return values.map(v => {
-        if (v <= 40) return '#EF4444';
-        if (v <= 60) return '#F59E0B';
-        if (v <= 80) return '#F59E0B';
+        if (v <= FAIXA_CRITICO_MAX) return '#EF4444';
+        if (v <= FAIXA_ATENCAO_MAX) return '#F59E0B';
+        if (v <= FAIXA_INTERMEDIARIO_MAX) return '#F59E0B';
         return '#22C55E';
     });
 }
@@ -1273,9 +1276,9 @@ function renderHorizontalBar(id, labels, values, descricoes, isLow) {
     destroyChart(id);
     const ctx = document.getElementById(id).getContext('2d');
     const colors = values.map(v => {
-        if (v <= 40) return '#EF4444';
-        if (v <= 60) return '#F59E0B';
-        if (v <= 80) return '#F59E0B';
+        if (v <= FAIXA_CRITICO_MAX) return '#EF4444';
+        if (v <= FAIXA_ATENCAO_MAX) return '#F59E0B';
+        if (v <= FAIXA_INTERMEDIARIO_MAX) return '#F59E0B';
         return '#22C55E';
     });
     charts[id] = new Chart(ctx, {
