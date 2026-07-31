@@ -1082,6 +1082,44 @@ async function downloadRelatorioPdf() {
         return count * fontSize * 0.352778 * lineHeightFactor;
     }
 
+    function getRelatorioBlockLayout(row) {
+        const descricaoWidth = contentWidth - 12;
+        const metaWidth = contentWidth - 12;
+        const descricaoFontSize = 9.6;
+        const descricaoLineHeight = 1.22;
+        const metaFontSize = 8.2;
+        const metaLineHeight = 1.22;
+        const topPadding = 13;
+        const bottomPadding = 8;
+        const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
+        const metaLine1 = doc.splitTextToSize(
+            `Ano: ${row.ano_escolar || '-'}   |   Componente: ${row.componente || '-'}`,
+            metaWidth
+        );
+        const metaLine2 = doc.splitTextToSize(
+            `Acerto: ${row.acerto_pct}%   |   Faixa: ${row.faixa || '-'}   |   Nível: ${row.nivel_dificuldade || '-'}`,
+            metaWidth
+        );
+        const metaLines = [...metaLine1, ...metaLine2];
+        const descricaoHeight = getWrappedTextHeight(descricao, descricaoFontSize, descricaoLineHeight);
+        const metaHeight = getWrappedTextHeight(metaLines, metaFontSize, metaLineHeight);
+        const blockHeight = topPadding + descricaoHeight + 5 + metaHeight + bottomPadding;
+
+        return {
+            descricaoWidth,
+            metaWidth,
+            descricaoFontSize,
+            descricaoLineHeight,
+            metaFontSize,
+            metaLineHeight,
+            descricao,
+            metaLines,
+            descricaoHeight,
+            metaHeight,
+            blockHeight
+        };
+    }
+
     function ensureSpace(requiredHeight, continuationTitle = '') {
         if (y + requiredHeight <= pageHeight - 16) return;
         doc.addPage();
@@ -1100,8 +1138,10 @@ async function downloadRelatorioPdf() {
 
     yearGroups.forEach((group, groupIdx) => {
         const anoLabel = group.anoEscolar || 'ANO NÃO INFORMADO';
+        const firstRowLayout = group.rows.length ? getRelatorioBlockLayout(group.rows[0]) : null;
+        const requiredForNewSection = 15 + (firstRowLayout ? firstRowLayout.blockHeight : 0);
 
-        if (groupIdx > 0) {
+        if (groupIdx > 0 && y + requiredForNewSection > pageHeight - 16) {
             doc.addPage();
             drawHeader(doc.getNumberOfPages());
         }
@@ -1109,36 +1149,16 @@ async function downloadRelatorioPdf() {
         drawAnoSectionTitle(anoLabel, false);
 
         group.rows.forEach(row => {
-            const descricaoWidth = contentWidth - 12;
-            const metaWidth = contentWidth - 12;
-            const descricaoFontSize = 9.6;
-            const descricaoLineHeight = 1.22;
-            const metaFontSize = 8.2;
-            const metaLineHeight = 1.22;
-            const topPadding = 13;
-            const bottomPadding = 8;
-            const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
-            const metaLine1 = doc.splitTextToSize(
-                `Ano: ${row.ano_escolar || '-'}   |   Componente: ${row.componente || '-'}`,
-                metaWidth
-            );
-            const metaLine2 = doc.splitTextToSize(
-                `Acerto: ${row.acerto_pct}%   |   Faixa: ${row.faixa || '-'}   |   Nível: ${row.nivel_dificuldade || '-'}`,
-                metaWidth
-            );
-            const metaLines = [...metaLine1, ...metaLine2];
-            const descricaoHeight = getWrappedTextHeight(descricao, descricaoFontSize, descricaoLineHeight);
-            const metaHeight = getWrappedTextHeight(metaLines, metaFontSize, metaLineHeight);
-            const blockHeight = topPadding + descricaoHeight + 5 + metaHeight + bottomPadding;
+            const layout = getRelatorioBlockLayout(row);
             const accent = faixaAccentColor(row.faixa);
 
-            ensureSpace(blockHeight, currentSectionTitle || anoLabel);
+            ensureSpace(layout.blockHeight, currentSectionTitle || anoLabel);
 
             doc.setFillColor(...accent.fill);
-            doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'F');
+            doc.roundedRect(marginX, y - 4, contentWidth, layout.blockHeight, 3, 3, 'F');
             doc.setDrawColor(...accent.border);
             doc.setLineWidth(0.6);
-            doc.roundedRect(marginX, y - 4, contentWidth, blockHeight, 3, 3, 'S');
+            doc.roundedRect(marginX, y - 4, contentWidth, layout.blockHeight, 3, 3, 'S');
             doc.setDrawColor(214, 224, 238);
             doc.setFillColor(23, 58, 94);
             doc.roundedRect(marginX + 2, y - 1.5, 22, 7, 2, 2, 'F');
@@ -1151,23 +1171,23 @@ async function downloadRelatorioPdf() {
             doc.text(`${row.habilidade_descritor}`, marginX + 28, y + 3);
 
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(descricaoFontSize);
+            doc.setFontSize(layout.descricaoFontSize);
             doc.setTextColor(52, 80, 107);
             const descricaoY = y + 9.5;
-            doc.text(descricao, marginX + 4, descricaoY, {
-                maxWidth: descricaoWidth,
-                lineHeightFactor: descricaoLineHeight
+            doc.text(layout.descricao, marginX + 4, descricaoY, {
+                maxWidth: layout.descricaoWidth,
+                lineHeightFactor: layout.descricaoLineHeight
             });
 
-            const metaY = descricaoY + descricaoHeight + 4.5;
-            doc.setFontSize(metaFontSize);
+            const metaY = descricaoY + layout.descricaoHeight + 4.5;
+            doc.setFontSize(layout.metaFontSize);
             doc.setTextColor(95, 111, 108);
-            doc.text(metaLines, marginX + 4, metaY, {
-                maxWidth: metaWidth,
-                lineHeightFactor: metaLineHeight
+            doc.text(layout.metaLines, marginX + 4, metaY, {
+                maxWidth: layout.metaWidth,
+                lineHeightFactor: layout.metaLineHeight
             });
 
-            y += blockHeight + 4;
+            y += layout.blockHeight + 4;
         });
     });
 
