@@ -2,13 +2,10 @@
 const FAIXA_COLORS = {
     'Crítico': { bg: '#FEE2E2', border: '#EF4444', text: '#B91C1C' },
     'Atenção': { bg: '#FEF3C7', border: '#F59E0B', text: '#B45309' },
-    'Intermediário': { bg: '#FDE68A', border: '#F59E0B', text: '#92400E' },
-    'Regular': { bg: '#FDE68A', border: '#F59E0B', text: '#92400E' },
     'Adequado': { bg: '#DCFCE7', border: '#22C55E', text: '#15803D' }
 };
-const FAIXA_CRITICO_MAX = 46.37;
-const FAIXA_ATENCAO_MAX = 60;
-const FAIXA_INTERMEDIARIO_MAX = 80;
+const FAIXA_CRITICO_MAX = 51;
+const FAIXA_ATENCAO_MAX = 80;
 
 let charts = {};
 let habData = [];
@@ -35,7 +32,6 @@ function classificarFaixa(pct) {
     if (pct == null || isNaN(pct)) return 'Sem dados';
     if (pct <= FAIXA_CRITICO_MAX) return 'Crítico';
     if (pct <= FAIXA_ATENCAO_MAX) return 'Atenção';
-    if (pct <= FAIXA_INTERMEDIARIO_MAX) return 'Intermediário';
     return 'Adequado';
 }
 
@@ -43,7 +39,6 @@ function classificarStatusTurma(pct) {
     if (pct == null || isNaN(pct)) return 'Sem dados';
     if (pct <= FAIXA_CRITICO_MAX) return 'Crítico';
     if (pct <= FAIXA_ATENCAO_MAX) return 'Atenção';
-    if (pct <= FAIXA_INTERMEDIARIO_MAX) return 'Regular';
     return 'Adequado';
 }
 
@@ -175,11 +170,11 @@ function getGraficosEscolas() {
 }
 
 function getDistribuicaoFaixas(escola, ano, componente) {
-    const order = ['Crítico', 'Atenção', 'Intermediário', 'Adequado'];
+    const order = ['Crítico', 'Atenção', 'Adequado'];
     const df = filtrarHab(escola, ano, componente);
-    if (df.length === 0) return { labels: order, values: [0, 0, 0, 0] };
+    if (df.length === 0) return { labels: order, values: [0, 0, 0] };
     const groups = groupBy(df, 'habilidade_pos');
-    const counts = { 'Crítico': 0, 'Atenção': 0, 'Intermediário': 0, 'Adequado': 0 };
+    const counts = { 'Crítico': 0, 'Atenção': 0, 'Adequado': 0 };
     for (const rows of Object.values(groups)) {
         const faixa = classificarFaixa(mean(rows.map(r => r.acerto_pct)));
         if (counts[faixa] !== undefined) counts[faixa]++;
@@ -346,8 +341,8 @@ function renderKPIs(ind) {
         { label: 'Língua Portuguesa', value: ind.media_lp + '%', cls: 'purple', sub: 'média LP' },
         { label: 'Matemática', value: ind.media_mt + '%', cls: 'purple', sub: 'média MT' },
         { label: 'Habilidades', value: ind.total_habilidades, cls: '', sub: 'avaliadas' },
-        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 46,37%' },
-        { label: 'Adequadas', value: ind.habilidades_adequadas, cls: 'green', sub: '> 80%' },
+        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 51%' },
+        { label: 'Adequadas', value: ind.habilidades_adequadas, cls: 'green', sub: '≥ 80,01%' },
         { label: 'Melhor', value: ind.melhor_desempenho + '%', cls: 'green', sub: 'habilidade' },
         { label: 'Pior', value: ind.pior_desempenho + '%', cls: 'red', sub: 'habilidade' },
         { label: 'Escolas', value: ind.total_escolas, cls: 'amber', sub: 'analisadas' },
@@ -396,7 +391,7 @@ function loadHabilidades() {
 }
 
 function faixaClass(faixa) {
-    const map = { 'Crítico': 'faixa-critico', 'Atenção': 'faixa-atencao', 'Intermediário': 'faixa-intermediario', 'Adequado': 'faixa-adequado' };
+    const map = { 'Crítico': 'faixa-critico', 'Atenção': 'faixa-atencao', 'Adequado': 'faixa-adequado' };
     return map[faixa] || '';
 }
 
@@ -426,7 +421,7 @@ function renderHabDetail(h) {
 // ===== ESCOLAS — ANÁLISE COMPLETA =====
 
 function escClassColor(cls) {
-    const m = { 'Adequado': '#22C55E', 'Regular': '#F59E0B', 'Atenção': '#F59E0B', 'Crítico': '#EF4444' };
+    const m = { 'Adequado': '#22C55E', 'Atenção': '#F59E0B', 'Crítico': '#EF4444' };
     return m[cls] || '#667A90';
 }
 
@@ -711,8 +706,8 @@ function renderEscolasHeatmap(detalhe, escolas) {
     const present = [...new Set(detalhe.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const sortedEsc = [...escolas].sort((a, b) => b.media - a.media);
 
-    const clsBg  = { 'Adequado': '#DCFCE7', 'Regular': '#FDE68A', 'Atenção': '#FEF3C7', 'Crítico': '#FEE2E2' };
-    const clsTxt = { 'Adequado': '#15803D', 'Regular': '#92400E', 'Atenção': '#B45309', 'Crítico': '#B91C1C' };
+    const clsBg  = { 'Adequado': '#DCFCE7', 'Atenção': '#FEF3C7', 'Crítico': '#FEE2E2' };
+    const clsTxt = { 'Adequado': '#15803D', 'Atenção': '#B45309', 'Crítico': '#B91C1C' };
 
     const cellStyle = 'text-align:center;padding:7px 6px;border-bottom:1px solid #e2e8f0;';
     const thStyle = 'padding:8px 10px;background:#17324D;color:#fff;font-size:11px;font-weight:600;';
@@ -881,12 +876,8 @@ function getRelatorioRows(escola, ano, componente, faixa = 'Todas', ordenacao = 
         faixa: r.faixa,
         nivel_dificuldade: r.nivel_dificuldade
     }));
-    if (faixa === 'Crítico + Atenção + Intermediário') {
-        rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Atenção' || r.faixa === 'Intermediário');
-    } else if (faixa === 'Crítico + Atenção') {
+    if (faixa === 'Crítico + Atenção') {
         rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Atenção');
-    } else if (faixa === 'Crítico + Intermediário') {
-        rows = rows.filter(r => r.faixa === 'Crítico' || r.faixa === 'Intermediário');
     } else if (faixa && faixa !== 'Todas') {
         rows = rows.filter(r => r.faixa === faixa);
     }
@@ -1003,7 +994,6 @@ async function downloadRelatorioPdf() {
         const colors = {
             'Crítico': { fill: [254, 226, 226], border: [239, 68, 68], text: [185, 28, 28] },
             'Atenção': { fill: [254, 243, 199], border: [245, 158, 11], text: [180, 83, 9] },
-            'Intermediário': { fill: [253, 230, 138], border: [245, 158, 11], text: [146, 64, 14] },
             'Adequado': { fill: [220, 252, 231], border: [34, 197, 94], text: [21, 128, 61] }
         };
         return colors[valor] || { fill: [248, 250, 252], border: [214, 224, 238], text: [52, 80, 107] };
@@ -1186,7 +1176,7 @@ async function downloadRelatorioPdf() {
 }
 
 function badgeClass(faixa) {
-    const map = { 'Crítico': 'badge-critico', 'Atenção': 'badge-atencao', 'Intermediário': 'badge-intermediario', 'Regular': 'badge-intermediario', 'Adequado': 'badge-adequado' };
+    const map = { 'Crítico': 'badge-critico', 'Atenção': 'badge-atencao', 'Adequado': 'badge-adequado' };
     return map[faixa] || '';
 }
 
@@ -1200,7 +1190,6 @@ function getBarColors(values, faixas) {
     return values.map(v => {
         if (v <= FAIXA_CRITICO_MAX) return '#EF4444';
         if (v <= FAIXA_ATENCAO_MAX) return '#F59E0B';
-        if (v <= FAIXA_INTERMEDIARIO_MAX) return '#F59E0B';
         return '#22C55E';
     });
 }
@@ -1278,7 +1267,6 @@ function renderHorizontalBar(id, labels, values, descricoes, isLow) {
     const colors = values.map(v => {
         if (v <= FAIXA_CRITICO_MAX) return '#EF4444';
         if (v <= FAIXA_ATENCAO_MAX) return '#F59E0B';
-        if (v <= FAIXA_INTERMEDIARIO_MAX) return '#F59E0B';
         return '#22C55E';
     });
     charts[id] = new Chart(ctx, {

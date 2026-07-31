@@ -13,9 +13,9 @@ DATA_DIR = ROOT / "backend" / "data"
 FRONTEND_DIR = ROOT / "frontend"
 DIST_DIR = ROOT / "dist"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
-FAIXA_CRITICO_MAX = 46.37
+FAIXA_CRITICO_MAX = 51
 FAIXA_ATENCAO_MAX = 60
-FAIXA_INTERMEDIARIO_MAX = 80
+FAIXA_ADEQUADO_MIN = 80.01
 
 
 def classificar_faixa(pct):
@@ -25,8 +25,6 @@ def classificar_faixa(pct):
         return "Crítico"
     elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= FAIXA_INTERMEDIARIO_MAX:
-        return "Intermediário"
     else:
         return "Adequado"
 
@@ -98,8 +96,6 @@ def classificar_status(pct):
         return "Crítico"
     elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= FAIXA_INTERMEDIARIO_MAX:
-        return "Regular"
     return "Adequado"
 
 
@@ -267,7 +263,7 @@ def build():
     ).round(1).reset_index()
     escola_cls = (
         df3.groupby("escola")["classificacao"]
-        .agg(lambda x: x.mode().iloc[0] if not x.empty else "Regular")
+        .agg(lambda x: x.mode().iloc[0] if not x.empty else "Atenção")
         .reset_index()
     )
     escola_cls.columns = ["escola", "classificacao"]

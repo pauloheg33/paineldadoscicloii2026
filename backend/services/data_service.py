@@ -5,9 +5,8 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
-FAIXA_CRITICO_MAX = 46.37
-FAIXA_ATENCAO_MAX = 60
-FAIXA_INTERMEDIARIO_MAX = 80
+FAIXA_CRITICO_MAX = 51
+FAIXA_ATENCAO_MAX = 80
 
 
 def normalizar_ano_label(valor):
@@ -114,8 +113,6 @@ def classificar_faixa(pct):
         return "Crítico"
     elif pct <= FAIXA_ATENCAO_MAX:
         return "Atenção"
-    elif pct <= FAIXA_INTERMEDIARIO_MAX:
-        return "Intermediário"
     else:
         return "Adequado"
 
@@ -273,7 +270,7 @@ def get_graficos_turmas(escola=None, ano=None, componente=None):
 
 def get_distribuicao_faixas(escola=None, ano=None, componente=None):
     df = filtrar_habilidades(escola, ano, componente)
-    order = ["Crítico", "Atenção", "Intermediário", "Adequado"]
+    order = ["Crítico", "Atenção", "Adequado"]
     if df.empty:
         return {"labels": order, "values": [0, 0, 0, 0]}
     agg = df.groupby("habilidade_pos")["acerto_pct"].mean()
@@ -308,13 +305,13 @@ def get_insights(escola=None, ano=None, componente=None):
 
     criticas = hab_media[hab_media["media"] <= FAIXA_CRITICO_MAX]
     if len(criticas) > 0:
-        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤46,37%): {', '.join(criticas['codigo'].tolist())}.")
+        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤51%): {', '.join(criticas['codigo'].tolist())}.")
     else:
-        insights.append("Nenhuma habilidade está em nível crítico (≤46,37%). Bom indicador geral.")
+        insights.append("Nenhuma habilidade está em nível crítico (≤51%). Bom indicador geral.")
 
     atencao = hab_media[(hab_media["media"] > FAIXA_CRITICO_MAX) & (hab_media["media"] <= FAIXA_ATENCAO_MAX)]
     if len(atencao) > 0:
-        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (46,38%-60%): {', '.join(atencao['codigo'].tolist())}.")
+        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (51,01%-60%): {', '.join(atencao['codigo'].tolist())}.")
 
     lp_media = df[df["componente"] == "Língua Portuguesa"]["acerto_pct"].mean()
     mt_media = df[df["componente"] == "Matemática"]["acerto_pct"].mean()
