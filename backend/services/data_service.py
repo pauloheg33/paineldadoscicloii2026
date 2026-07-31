@@ -5,7 +5,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
-FAIXA_CRITICO_MAX = 51
+FAIXA_CRITICO_MAX = 56
 FAIXA_ATENCAO_MAX = 80
 
 
@@ -305,13 +305,13 @@ def get_insights(escola=None, ano=None, componente=None):
 
     criticas = hab_media[hab_media["media"] <= FAIXA_CRITICO_MAX]
     if len(criticas) > 0:
-        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤51%): {', '.join(criticas['codigo'].tolist())}.")
+        insights.append(f"Existem {len(criticas)} habilidade(s) em nível CRÍTICO (≤56%): {', '.join(criticas['codigo'].tolist())}.")
     else:
-        insights.append("Nenhuma habilidade está em nível crítico (≤51%). Bom indicador geral.")
+        insights.append("Nenhuma habilidade está em nível crítico (≤56%). Bom indicador geral.")
 
     atencao = hab_media[(hab_media["media"] > FAIXA_CRITICO_MAX) & (hab_media["media"] <= FAIXA_ATENCAO_MAX)]
     if len(atencao) > 0:
-        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (51,01%-60%): {', '.join(atencao['codigo'].tolist())}.")
+        insights.append(f"{len(atencao)} habilidade(s) estão em nível de ATENÇÃO (56,01%-80%): {', '.join(atencao['codigo'].tolist())}.")
 
     lp_media = df[df["componente"] == "Língua Portuguesa"]["acerto_pct"].mean()
     mt_media = df[df["componente"] == "Matemática"]["acerto_pct"].mean()

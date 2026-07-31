@@ -4,7 +4,7 @@ const FAIXA_COLORS = {
     'Atenção': { bg: '#FEF3C7', border: '#F59E0B', text: '#B45309' },
     'Adequado': { bg: '#DCFCE7', border: '#22C55E', text: '#15803D' }
 };
-const FAIXA_CRITICO_MAX = 51;
+const FAIXA_CRITICO_MAX = 56;
 const FAIXA_ATENCAO_MAX = 80;
 
 let charts = {};
@@ -341,7 +341,7 @@ function renderKPIs(ind) {
         { label: 'Língua Portuguesa', value: ind.media_lp + '%', cls: 'purple', sub: 'média LP' },
         { label: 'Matemática', value: ind.media_mt + '%', cls: 'purple', sub: 'média MT' },
         { label: 'Habilidades', value: ind.total_habilidades, cls: '', sub: 'avaliadas' },
-        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 51%' },
+        { label: 'Críticas', value: ind.habilidades_criticas, cls: 'red', sub: '≤ 56%' },
         { label: 'Adequadas', value: ind.habilidades_adequadas, cls: 'green', sub: '≥ 80,01%' },
         { label: 'Melhor', value: ind.melhor_desempenho + '%', cls: 'green', sub: 'habilidade' },
         { label: 'Pior', value: ind.pior_desempenho + '%', cls: 'red', sub: 'habilidade' },

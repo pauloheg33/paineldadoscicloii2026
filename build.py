@@ -13,7 +13,7 @@ DATA_DIR = ROOT / "backend" / "data"
 FRONTEND_DIR = ROOT / "frontend"
 DIST_DIR = ROOT / "dist"
 VALID_COMPONENTES = {"Língua Portuguesa", "Matemática"}
-FAIXA_CRITICO_MAX = 51
+FAIXA_CRITICO_MAX = 56
 FAIXA_ATENCAO_MAX = 60
 FAIXA_ADEQUADO_MIN = 80.01
 
