@@ -205,7 +205,6 @@ body { display:flex; }
 /* Faixas de cor */
 .faixa-critico   { background:linear-gradient(135deg,#FCA5A5,#EF4444); color:#17324D; }
 .faixa-atencao   { background:linear-gradient(135deg,#FCD34D,#F59E0B); color:#17324D; }
-.faixa-intermediario { background:linear-gradient(135deg,#FDE68A,#F59E0B); color:#17324D; }
 .faixa-adequado  { background:linear-gradient(135deg,#86EFAC,#22C55E); color:#17324D; }
 
 /* ===== MODAL ===== */
@@ -258,7 +257,6 @@ body { display:flex; }
 }
 .badge-critico { background:#FEE2E2; color:#B91C1C; }
 .badge-atencao { background:#FEF3C7; color:#B45309; }
-.badge-intermediario { background:#FDE68A; color:#92400E; }
 .badge-adequado { background:#DCFCE7; color:#15803D; }
 
 /* ===== RELATÓRIOS ===== */
