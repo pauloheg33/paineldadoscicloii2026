@@ -1084,6 +1084,11 @@ async function downloadRelatorioPdf() {
         y += 15;
     }
 
+    function getWrappedTextHeight(lines, fontSize, lineHeightFactor = 1.15) {
+        const count = Array.isArray(lines) ? Math.max(lines.length, 1) : 1;
+        return count * fontSize * 0.352778 * lineHeightFactor;
+    }
+
     function ensureSpace(requiredHeight, continuationTitle = '') {
         if (y + requiredHeight <= pageHeight - 16) return;
         doc.addPage();
@@ -1113,6 +1118,12 @@ async function downloadRelatorioPdf() {
         group.rows.forEach(row => {
             const descricaoWidth = contentWidth - 12;
             const metaWidth = contentWidth - 12;
+            const descricaoFontSize = 9.4;
+            const descricaoLineHeight = 1.12;
+            const metaFontSize = 8.2;
+            const metaLineHeight = 1.1;
+            const topPadding = 11;
+            const bottomPadding = 6;
             const descricao = doc.splitTextToSize(row.habilidade_descricao || '', descricaoWidth);
             const meta = [
                 `Ano: ${row.ano_escolar || '-'}`,
@@ -1122,7 +1133,9 @@ async function downloadRelatorioPdf() {
                 `Nível: ${row.nivel_dificuldade || '-'}`
             ].join('  |  ');
             const metaLines = doc.splitTextToSize(meta, metaWidth);
-            const blockHeight = 12 + (descricao.length * 5.2) + (metaLines.length * 4.8) + 11;
+            const descricaoHeight = getWrappedTextHeight(descricao, descricaoFontSize, descricaoLineHeight);
+            const metaHeight = getWrappedTextHeight(metaLines, metaFontSize, metaLineHeight);
+            const blockHeight = topPadding + descricaoHeight + 2.5 + metaHeight + bottomPadding;
             const accent = faixaAccentColor(row.faixa);
 
             ensureSpace(blockHeight, currentSectionTitle || anoLabel);
@@ -1144,16 +1157,23 @@ async function downloadRelatorioPdf() {
             doc.text(`${row.habilidade_descritor}`, marginX + 28, y + 3);
 
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
+            doc.setFontSize(descricaoFontSize);
             doc.setTextColor(52, 80, 107);
-            doc.text(descricao, marginX + 4, y + 9, { maxWidth: descricaoWidth });
+            const descricaoY = y + 8;
+            doc.text(descricao, marginX + 4, descricaoY, {
+                maxWidth: descricaoWidth,
+                lineHeightFactor: descricaoLineHeight
+            });
 
-            const metaY = y + 9 + (descricao.length * 5.2) + 1.5;
-            doc.setFontSize(8.5);
+            const metaY = descricaoY + descricaoHeight + 2.5;
+            doc.setFontSize(metaFontSize);
             doc.setTextColor(95, 111, 108);
-            doc.text(metaLines, marginX + 4, metaY, { maxWidth: metaWidth });
+            doc.text(metaLines, marginX + 4, metaY, {
+                maxWidth: metaWidth,
+                lineHeightFactor: metaLineHeight
+            });
 
-            y += blockHeight + 4;
+            y += blockHeight + 3;
         });
     });
 
