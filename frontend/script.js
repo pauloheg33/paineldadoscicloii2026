@@ -706,8 +706,24 @@ function renderEscolasHeatmap(detalhe, escolas) {
     const present = [...new Set(detalhe.map(r => r.ano_escolar).filter(Boolean))].sort((a, b) => anoSortKey(a) - anoSortKey(b));
     const sortedEsc = [...escolas].sort((a, b) => b.media - a.media);
 
-    const clsBg  = { 'Adequado': '#DCFCE7', 'Atenção': '#FEF3C7', 'Crítico': '#FEE2E2' };
-    const clsTxt = { 'Adequado': '#15803D', 'Atenção': '#B45309', 'Crítico': '#B91C1C' };
+    // A matriz segue as faixas vigentes do painel, calculadas a partir da média.
+    // Não usamos a classificação textual da planilha porque ela pode conter
+    // nomenclaturas antigas, como "Regular".
+    const clsBg = {
+        'Adequado': '#DCFCE7',
+        'Atenção': '#FDE68A',
+        'Crítico': '#FCA5A5'
+    };
+    const clsBorder = {
+        'Adequado': '#86EFAC',
+        'Atenção': '#D97706',
+        'Crítico': '#DC2626'
+    };
+    const clsTxt = {
+        'Adequado': '#15803D',
+        'Atenção': '#92400E',
+        'Crítico': '#991B1B'
+    };
 
     const cellStyle = 'text-align:center;padding:7px 6px;border-bottom:1px solid #e2e8f0;';
     const thStyle = 'padding:8px 10px;background:#17324D;color:#fff;font-size:11px;font-weight:600;';
@@ -726,21 +742,25 @@ function renderEscolasHeatmap(detalhe, escolas) {
         present.forEach(etapa => {
             const row = detalhe.find(r => r.escola === esc.escola && r.ano_escolar === etapa);
             if (row) {
-                const bg = clsBg[row.classificacao] || '#f1f5f9';
-                const tc = clsTxt[row.classificacao] || '#475569';
+                const faixa = classificarFaixa(row.media_geral);
+                const bg = clsBg[faixa] || '#f1f5f9';
+                const border = clsBorder[faixa] || '#cbd5e1';
+                const tc = clsTxt[faixa] || '#475569';
                 html += `<td style="${cellStyle}">
-                    <div style="background:${bg};color:${tc};border-radius:6px;padding:4px 6px;font-weight:700;">${row.media_geral}%</div>
-                    <div style="font-size:9px;color:${tc};margin-top:2px;">${row.classificacao}</div>
+                    <div style="background:${bg};color:${tc};border:1px solid ${border};border-radius:6px;padding:4px 6px;font-weight:700;">${row.media_geral}%</div>
+                    <div style="font-size:9px;color:${tc};margin-top:2px;">${faixa}</div>
                 </td>`;
             } else {
                 html += `<td style="${cellStyle}color:#CBD5E1;">—</td>`;
             }
         });
-        const bg = clsBg[esc.classificacao] || '#f1f5f9';
-        const tc = clsTxt[esc.classificacao] || '#475569';
+        const faixa = classificarFaixa(esc.media);
+        const bg = clsBg[faixa] || '#f1f5f9';
+        const border = clsBorder[faixa] || '#cbd5e1';
+        const tc = clsTxt[faixa] || '#475569';
         html += `<td style="${cellStyle}">
-            <div style="background:${bg};color:${tc};border-radius:6px;padding:4px 6px;font-weight:800;">${esc.media}%</div>
-            <div style="font-size:9px;color:${tc};margin-top:2px;">${esc.classificacao}</div>
+            <div style="background:${bg};color:${tc};border:1px solid ${border};border-radius:6px;padding:4px 6px;font-weight:800;">${esc.media}%</div>
+            <div style="font-size:9px;color:${tc};margin-top:2px;">${faixa}</div>
         </td></tr>`;
     });
 
@@ -759,7 +779,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
     html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;">`;
     Object.entries(clsBg).forEach(([cls, bg]) => {
         html += `<span style="display:flex;align-items:center;gap:5px;">
-            <span style="width:14px;height:14px;border-radius:3px;background:${bg};border:1px solid ${clsTxt[cls]};display:inline-block;"></span>
+            <span style="width:14px;height:14px;border-radius:3px;background:${bg};border:1px solid ${clsBorder[cls]};display:inline-block;"></span>
             <span style="color:${clsTxt[cls]};font-weight:600;">${cls}</span>
         </span>`;
     });
