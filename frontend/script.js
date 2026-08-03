@@ -724,6 +724,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
         'Atenção': '#92400E',
         'Crítico': '#991B1B'
     };
+    const clsLabel = { 'Atenção': 'Intermediário' };
 
     const cellStyle = 'text-align:center;padding:7px 6px;border-bottom:1px solid #e2e8f0;';
     const thStyle = 'padding:8px 10px;background:#17324D;color:#fff;font-size:11px;font-weight:600;';
@@ -748,7 +749,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
                 const tc = clsTxt[faixa] || '#475569';
                 html += `<td style="${cellStyle}">
                     <div style="background:${bg};color:${tc};border:1px solid ${border};border-radius:6px;padding:4px 6px;font-weight:700;">${row.media_geral}%</div>
-                    <div style="font-size:9px;color:${tc};margin-top:2px;">${faixa}</div>
+                    <div style="font-size:9px;color:${tc};margin-top:2px;">${clsLabel[faixa] || faixa}</div>
                 </td>`;
             } else {
                 html += `<td style="${cellStyle}color:#CBD5E1;">—</td>`;
@@ -760,7 +761,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
         const tc = clsTxt[faixa] || '#475569';
         html += `<td style="${cellStyle}">
             <div style="background:${bg};color:${tc};border:1px solid ${border};border-radius:6px;padding:4px 6px;font-weight:800;">${esc.media}%</div>
-            <div style="font-size:9px;color:${tc};margin-top:2px;">${faixa}</div>
+            <div style="font-size:9px;color:${tc};margin-top:2px;">${clsLabel[faixa] || faixa}</div>
         </td></tr>`;
     });
 
@@ -780,7 +781,7 @@ function renderEscolasHeatmap(detalhe, escolas) {
     Object.entries(clsBg).forEach(([cls, bg]) => {
         html += `<span style="display:flex;align-items:center;gap:5px;">
             <span style="width:14px;height:14px;border-radius:3px;background:${bg};border:1px solid ${clsBorder[cls]};display:inline-block;"></span>
-            <span style="color:${clsTxt[cls]};font-weight:600;">${cls}</span>
+            <span style="color:${clsTxt[cls]};font-weight:600;">${clsLabel[cls] || cls}</span>
         </span>`;
     });
     html += `</div>`;
