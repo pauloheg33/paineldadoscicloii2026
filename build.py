@@ -245,9 +245,16 @@ def build():
         df3["classificacao"].notna(),
         df3["media_geral"].apply(classificar_status)
     )
-    df3["hab_criticas"] = df3.apply(
+    # A planilha de análise é a fonte oficial deste indicador na aba Escolas.
+    # O cálculo vindo da planilha de habilidades é usado somente quando a célula
+    # correspondente estiver vazia, preservando os totais informados na análise.
+    hab_criticas_calculadas = df3.apply(
         lambda row: hab_criticas_map.get((row["escola"], row["ano_escolar"]), 0),
         axis=1
+    )
+    df3["hab_criticas"] = df3["hab_criticas"].where(
+        df3["hab_criticas"].notna(),
+        hab_criticas_calculadas
     )
     df3 = df3.dropna(subset=["escola", "media_geral"])
     df3["hab_criticas"] = df3["hab_criticas"].fillna(0).astype(int)
